@@ -23,7 +23,7 @@ class RootPage extends StatelessWidget implements AutoRouteWrapper {
           );
         }
 
-        final isLoggedIn = snapshot.data == true;
+        //final isLoggedIn = snapshot.data == true;
 
         return AutoRouter.declarative(
           routes: (_) {

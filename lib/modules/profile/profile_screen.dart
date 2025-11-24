@@ -30,7 +30,7 @@ class _ProfileView extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.primaryLight,
         foregroundColor: Colors.white,
       ),
       body: user == null
@@ -44,7 +44,7 @@ class _ProfileView extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child: Icon(

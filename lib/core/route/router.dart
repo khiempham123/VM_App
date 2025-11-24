@@ -50,7 +50,7 @@ final mainRoute = AutoRoute(
       children: [
         AutoRoute(page: HomeRoute.page),
         AutoRoute(page: ProfileRoute.page),
-        AutoRoute(page: MetroGoRoute.page)
+        AutoRoute(page: MetroMapRoute.page)
       ],
     ),
     // AutoRoute(page: ExportCarRoute.page),

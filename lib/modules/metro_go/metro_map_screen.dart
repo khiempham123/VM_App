@@ -1,8 +1,8 @@
-import 'package:vm_first_app/app/app_provider.dart';
+//import 'package:vm_first_app/app/app_provider.dart';
 import 'package:vm_first_app/core/route/router.dart';
 import 'package:vm_first_app/core/core.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+//import 'package:provider/provider.dart';
 
 
 //Idea: Try using Vietmap Api to get map and finding place near the metro terminal
@@ -19,6 +19,15 @@ class MetroMapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _MetroMapView();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Metro Go'),
+        backgroundColor: AppColors.primaryLight,
+        foregroundColor: Colors.white,
+      ),
+      body: const Center(
+        child: Text('Go with Metro'),
+      )
+    );
   }
 }

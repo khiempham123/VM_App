@@ -91,6 +91,22 @@ class MainRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [MetroMapScreen]
+class MetroMapRoute extends PageRouteInfo<void> {
+  const MetroMapRoute({List<PageRouteInfo>? children})
+    : super(MetroMapRoute.name, initialChildren: children);
+
+  static const String name = 'MetroMapRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const MetroMapScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [ProfileScreen]
 class ProfileRoute extends PageRouteInfo<void> {
   const ProfileRoute({List<PageRouteInfo>? children})
