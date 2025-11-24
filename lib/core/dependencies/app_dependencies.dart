@@ -1,5 +1,5 @@
 import 'package:vm_first_app/app/app_provider.dart';
-import 'package:vm_first_app/app/router.dart';
+import 'package:vm_first_app/core/route/router.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 //import 'package:flutter/foundation.dart';

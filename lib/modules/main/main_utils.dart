@@ -1,4 +1,4 @@
-import 'package:vm_first_app/app/router.dart';
+import 'package:vm_first_app/core/route/router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 

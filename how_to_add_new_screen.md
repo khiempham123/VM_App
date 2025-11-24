@@ -8,8 +8,9 @@
 
 1. [Phân Tích Logic Flow Hiện Tại](#1-phân-tích-logic-flow-hiện-tại)
 2. [Cấu Trúc Dự Án Theo Clean Architecture](#2-cấu-trúc-dự-án-theo-clean-architecture)
-3. [Ví Dụ: Thêm Profile Screen Với Logout Feature](#3-ví-dụ-thêm-profile-screen-với-logout-feature)
-4. [Template Tổng Quát Cho Màn Hình Mới](#4-template-tổng-quát-cho-màn-hình-mới)
+3. [Hướng Dẫn Đăng Ký Routes Chi Tiết](#3-hướng-dẫn-đăng-ký-routes-chi-tiết)
+4. [Ví Dụ: Thêm Profile Screen Với Logout Feature](#4-ví-dụ-thêm-profile-screen-với-logout-feature)
+5. [Template Tổng Quát Cho Màn Hình Mới](#5-template-tổng-quát-cho-màn-hình-mới)
 
 ---
 
@@ -364,7 +365,922 @@ lib/
 
 ---
 
-## 3. VÍ DỤ: THÊM PROFILE SCREEN VỚI LOGOUT FEATURE
+## 3. HƯỚNG DẪN ĐĂNG KÝ ROUTES CHI TIẾT
+
+### 📍 **Cấu Trúc Routing Trong Dự Án**
+
+Dự án sử dụng **AutoRoute** package để quản lý navigation. Toàn bộ routing configuration nằm trong:
+
+```
+lib/core/route/
+  ├── router.dart          ← Định nghĩa routes
+  ├── router.gr.dart       ← Generated code (không edit trực tiếp)
+  ├── root_route.dart      ← Root page với auth logic
+  └── route_path.dart      ← Constants cho route paths
+```
+
+---
+
+### 🎯 **CÁC LOẠI ROUTES TRONG DỰ ÁN**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. ROOT ROUTE (/)                                                │
+│    - RootRoute → RootPage                                        │
+│    - Kiểm tra auth state (isLoggedIn)                            │
+│    - Điều hướng đến MainRootRoute hoặc LoginRootRoute            │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. LOGIN ROUTES (/login)                                         │
+│    - LoginRootRoute (container)                                  │
+│      └── LoginRoute (initial: true)                              │
+│      └── RegisterRoute                                           │
+│    - Hiển thị khi user chưa đăng nhập                            │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. MAIN ROUTES (/main)                                           │
+│    - MainRootRoute (container)                                   │
+│      └── MainRoute (chứa AutoTabsRouter)                         │
+│          ├── HomeRoute                                           │
+│          ├── ProfileRoute                                        │
+│          └── MetroGoRoute                                        │
+│    - Hiển thị khi user đã đăng nhập                              │
+│    - Sử dụng Bottom Navigation Bar                               │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. STANDALONE ROUTES                                             │
+│    - Các routes độc lập, không thuộc Bottom Navigation           │
+│    - Ví dụ: JobDetailRoute, SettingsRoute, etc.                 │
+│    - Navigate bằng context.router.push()                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 📝 **QUY TRÌNH ĐĂNG KÝ ROUTE CHO MÀN HÌNH MỚI**
+
+#### **CASE 1: Thêm Màn Hình Vào Bottom Navigation Bar**
+
+**Ví dụ: MetroGo Screen**
+
+##### **Bước 1: Tạo Screen với @RoutePage annotation**
+
+**File:** `lib/modules/metro_go/metro_map_screen.dart`
+
+```dart
+import 'package:vm_first_app/core/route/router.dart';
+import 'package:flutter/material.dart';
+
+@RoutePage() // ← BẮT BUỘC: Annotation để AutoRoute generate code
+class MetroMapScreen extends StatelessWidget {
+  const MetroMapScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Metro Map'),
+      ),
+      body: const Center(
+        child: Text('Metro Map Content'),
+      ),
+    );
+  }
+}
+```
+
+**☑️ Checklist:**
+- ✅ Import `package:vm_first_app/core/route/router.dart` hoặc `package:auto_route/auto_route.dart`
+- ✅ Thêm `@RoutePage()` annotation trên class
+- ✅ Class phải là public (không có `_` prefix)
+- ✅ Constructor phải có `super.key`
+
+---
+
+##### **Bước 2: Import Screen vào Router**
+
+**File:** `lib/core/route/router.dart`
+
+```dart
+import 'package:auto_route/auto_route.dart';
+import 'package:vm_first_app/core/route/root_route.dart';
+import 'package:vm_first_app/core/route/route_path.dart';
+import 'package:vm_first_app/modules/auth/login/login_screen.dart';
+import 'package:vm_first_app/modules/auth/register/register_screen.dart';
+import 'package:vm_first_app/modules/home/screens/home_screen.dart';
+import 'package:vm_first_app/modules/profile/profile_screen.dart';
+import 'package:vm_first_app/modules/metro_go/metro_map_screen.dart'; // ← THÊM IMPORT
+import 'package:vm_first_app/modules/main/main_screen.dart';
+import 'package:flutter/cupertino.dart';
+
+export 'package:auto_route/auto_route.dart';
+
+part 'router.gr.dart';
+```
+
+---
+
+##### **Bước 3: Đăng ký Route trong mainRoute children**
+
+**File:** `lib/core/route/router.dart`
+
+```dart
+final mainRoute = AutoRoute(
+  path: RoutePath.kMain,
+  page: MainRootRoute.page,
+  children: [
+    AutoRoute(
+      page: MainRoute.page,
+      path: '',
+      children: [
+        AutoRoute(page: HomeRoute.page),
+        AutoRoute(page: ProfileRoute.page),
+        AutoRoute(page: MetroGoRoute.page), // ← THÊM ROUTE MỚI
+      ],
+    ),
+    RedirectRoute(path: '*', redirectTo: ''),
+  ],
+);
+```
+
+**📌 Lưu ý:**
+- `MetroGoRoute` sẽ được generate từ `MetroMapScreen` (bỏ `Screen` thêm `Route`)
+- Thứ tự trong `children` quyết định index trong Bottom Navigation
+
+---
+
+##### **Bước 4: Chạy Build Runner để Generate Code**
+
+```bash
+fvm flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+**✅ Kết quả:** File `router.gr.dart` sẽ được generate với:
+
+```dart
+/// generated route for
+/// [MetroMapScreen]
+class MetroGoRoute extends PageRouteInfo<void> {
+  const MetroGoRoute({List<PageRouteInfo>? children})
+    : super(MetroGoRoute.name, initialChildren: children);
+
+  static const String name = 'MetroGoRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const MetroMapScreen();
+    },
+  );
+}
+```
+
+---
+
+##### **Bước 5: Thêm vào MainBottomTab enum**
+
+**File:** `lib/modules/main/main_utils.dart`
+
+```dart
+import 'package:vm_first_app/core/route/router.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+
+enum MainBottomTab { 
+  kHome, 
+  kMetroGo,  // ← THÊM TAB MỚI
+  kAccount 
+}
+
+extension ListMainBottomTabExt on List<MainBottomTab> {
+  List<PageRouteInfo<dynamic>> allRoutes() {
+    return map((e) {
+      switch (e) {
+        case MainBottomTab.kHome:
+          return const HomeRoute();
+        case MainBottomTab.kMetroGo: // ← MAP TAB → ROUTE
+          return const MetroGoRoute();
+        case MainBottomTab.kAccount:
+          return const ProfileRoute();
+      }
+    }).cast<PageRouteInfo<dynamic>>().toList();
+  }
+
+  List<BottomNavigationBarItem> allItems() {
+    return map((e) {
+      switch (e) {
+        case MainBottomTab.kHome:
+          return BottomNavigationBarItem(
+            icon: const Icon(Icons.home, size: 20),
+            activeIcon: const Icon(Icons.home_filled, size: 20),
+            label: "home_tab".tr(),
+          );
+        case MainBottomTab.kMetroGo: // ← THÊM BOTTOM NAV ITEM
+          return BottomNavigationBarItem(
+            icon: const Icon(Icons.subway, size: 20),
+            activeIcon: const Icon(Icons.subway_rounded, size: 20),
+            label: "metro_tab".tr(),
+          );
+        case MainBottomTab.kAccount:
+          return BottomNavigationBarItem(
+            icon: const Icon(Icons.person_outline, size: 20),
+            activeIcon: const Icon(Icons.person, size: 20),
+            label: "profile_tab".tr(),
+          );
+      }
+    }).toList();
+  }
+}
+```
+
+**📌 Tuân thủ quy tắc:**
+- Thứ tự trong enum phải khớp với thứ tự trong `mainRoute.children`
+- Tên enum nên bắt đầu với `k` (convention)
+- Label sử dụng `.tr()` cho localization
+
+---
+
+##### **Bước 6: Thêm Localization Keys (Optional)**
+
+**File:** `resources/langs/en.json`
+
+```json
+{
+  "home_tab": "Home",
+  "metro_tab": "Metro",
+  "profile_tab": "Profile"
+}
+```
+
+**File:** `resources/langs/vi.json`
+
+```json
+{
+  "home_tab": "Trang chủ",
+  "metro_tab": "Metro",
+  "profile_tab": "Hồ sơ"
+}
+```
+
+---
+
+##### **Bước 7: Test Navigation**
+
+```dart
+// Trong MainScreen, AutoTabsRouter tự động handle navigation
+// User chỉ cần tap vào bottom navigation item
+
+// Kiểm tra:
+// 1. Bottom Navigation hiển thị đủ 3 tabs
+// 2. Tap vào "Metro" tab → MetroMapScreen hiển thị
+// 3. Tab switching hoạt động smooth
+```
+
+---
+
+#### **CASE 2: Thêm Standalone Route (Không thuộc Bottom Navigation)**
+
+**Ví dụ: Job Detail Screen**
+
+##### **Bước 1: Tạo Screen với Parameters**
+
+**File:** `lib/modules/job/screens/job_detail_screen.dart`
+
+```dart
+import 'package:vm_first_app/core/route/router.dart';
+import 'package:flutter/material.dart';
+
+@RoutePage()
+class JobDetailScreen extends StatelessWidget {
+  final String jobId; // ← Route parameter
+
+  const JobDetailScreen({
+    super.key,
+    @PathParam('id') required this.jobId, // ← Annotation cho path param
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Job Detail: $jobId'),
+      ),
+      body: Center(
+        child: Text('Job ID: $jobId'),
+      ),
+    );
+  }
+}
+```
+
+**📌 Annotations cho parameters:**
+- `@PathParam('id')` - URL path parameter: `/jobs/123`
+- `@QueryParam('filter')` - Query parameter: `/jobs?filter=active`
+- Không annotation - Regular parameter
+
+---
+
+##### **Bước 2: Import và Đăng ký Route**
+
+**File:** `lib/core/route/router.dart`
+
+```dart
+import 'package:vm_first_app/modules/job/screens/job_detail_screen.dart';
+
+final mainRoute = AutoRoute(
+  path: RoutePath.kMain,
+  page: MainRootRoute.page,
+  children: [
+    AutoRoute(
+      page: MainRoute.page,
+      path: '',
+      children: [
+        AutoRoute(page: HomeRoute.page),
+        AutoRoute(page: ProfileRoute.page),
+        AutoRoute(page: MetroGoRoute.page),
+      ],
+    ),
+    // Standalone routes (không thuộc Bottom Nav)
+    AutoRoute(
+      page: JobDetailRoute.page,
+      path: 'job/:id', // ← Path với parameter
+    ),
+    RedirectRoute(path: '*', redirectTo: ''),
+  ],
+);
+```
+
+**📌 Path patterns:**
+- `'job/:id'` - Dynamic parameter
+- `'job/123'` - Static path
+- `'job/:id/edit'` - Multiple segments
+
+---
+
+##### **Bước 3: Generate Code**
+
+```bash
+fvm flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+---
+
+##### **Bước 4: Navigate đến Standalone Route**
+
+```dart
+// Từ bất kỳ screen nào
+ElevatedButton(
+  onPressed: () {
+    // Method 1: Push route với parameter
+    context.router.push(JobDetailRoute(jobId: '123'));
+    
+    // Method 2: Push by path
+    context.router.pushNamed('/main/job/123');
+    
+    // Method 3: Replace current route
+    context.router.replace(JobDetailRoute(jobId: '123'));
+  },
+  child: const Text('View Job Detail'),
+);
+
+// Pop back
+IconButton(
+  icon: const Icon(Icons.arrow_back),
+  onPressed: () => context.router.pop(),
+);
+
+// Pop with result
+context.router.pop('result_data');
+
+// Pop until specific route
+context.router.popUntil((route) => route.settings.name == 'HomeRoute');
+```
+
+---
+
+#### **CASE 3: Thêm Route Trước Khi Login (Splash/Onboarding)**
+
+**Ví dụ: Splash Screen hoặc Onboarding**
+
+##### **Bước 1: Tạo Screen**
+
+**File:** `lib/modules/splash/splash_screen.dart`
+
+```dart
+import 'package:vm_first_app/core/route/router.dart';
+import 'package:flutter/material.dart';
+
+@RoutePage()
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Simulate loading
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // Check auth state
+    final appProvider = locator<AppProvider>();
+    final isLoggedIn = appProvider.isLoggedIn.value;
+    
+    if (!mounted) return;
+    
+    if (isLoggedIn) {
+      context.router.replace(const MainRootRoute());
+    } else {
+      context.router.replace(const LoginRootRoute());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+```
+
+---
+
+##### **Bước 2: Đăng ký Route ở Top Level**
+
+**File:** `lib/core/route/router.dart`
+
+```dart
+@AutoRouterConfig(replaceInRouteName: 'Screen|Page,Route')
+class RootRouter extends RootStackRouter {
+  @override
+  List<AutoRoute> get routes => [
+    // Option A: Splash làm initial route
+    AutoRoute(
+      initial: true,
+      path: RoutePath.kSplash,
+      page: SplashRoute.page,
+    ),
+    AutoRoute(
+      path: RoutePath.kRoot,
+      page: RootRoute.page,
+      children: [mainRoute, loginRoute],
+    ),
+    
+    // Option B: Keep RootRoute as initial (hiện tại)
+    // AutoRoute(
+    //   initial: true,
+    //   path: RoutePath.kRoot,
+    //   page: RootRoute.page,
+    //   children: [mainRoute, loginRoute],
+    // ),
+    // AutoRoute(
+    //   path: RoutePath.kSplash,
+    //   page: SplashRoute.page,
+    // ),
+    
+    RedirectRoute(path: '*', redirectTo: RoutePath.kRoot),
+  ];
+}
+```
+
+---
+
+##### **Bước 3: Update RoutePath Constants**
+
+**File:** `lib/core/route/route_path.dart`
+
+```dart
+class RoutePath {
+  static const kRoot = "/";
+  static const kSplash = "/splash"; // ← THÊM
+  static const kMain = "main";
+  static const kLogin = "login";
+  static const kMainScreen = "main_screen";
+}
+```
+
+---
+
+##### **Bước 4: Modify Main Initialization**
+
+**File:** `lib/main.dart`
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
+  
+  final kvStorage = SharedPreferencesKeyValueStorage.newInstance();
+  await AppDependencies.init(kvStorage);
+  
+  // KHÔNG gọi restore() ở đây nếu dùng Splash Screen
+  // await locator<AppProvider>().restore();
+  
+  runApp(const LocalizationWidget(child: MyApp()));
+}
+```
+
+**Giải thích:**
+- **Với Splash Screen:** Restore auth trong `SplashScreen.initState()`
+- **Không Splash:** Restore auth trong `main()` trước `runApp()`
+
+---
+
+##### **Bước 5: Alternative - Middleware Route Guard**
+
+**File:** `lib/core/route/auth_guard.dart` (**TẠO MỚI**)
+
+```dart
+import 'package:auto_route/auto_route.dart';
+import 'package:vm_first_app/core/core.dart';
+import 'package:vm_first_app/app/app_provider.dart';
+
+class AuthGuard extends AutoRouteGuard {
+  @override
+  void onNavigation(NavigationResolver resolver, StackRouter router) {
+    final appProvider = locator<AppProvider>();
+    final isLoggedIn = appProvider.isLoggedIn.value;
+    
+    if (isLoggedIn) {
+      // User đã login, cho phép navigate
+      resolver.next(true);
+    } else {
+      // User chưa login, redirect về login
+      resolver.redirect(const LoginRootRoute());
+    }
+  }
+}
+```
+
+**Sử dụng Guard:**
+
+**File:** `lib/core/route/router.dart`
+
+```dart
+final mainRoute = AutoRoute(
+  path: RoutePath.kMain,
+  page: MainRootRoute.page,
+  guards: [AuthGuard()], // ← THÊM GUARD
+  children: [
+    // ...existing children
+  ],
+);
+```
+
+---
+
+### 📊 **SO SÁNH CÁC CÁCH ĐĂNG KÝ ROUTE**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ BOTTOM NAVIGATION ROUTE                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ ✓ Luôn hiển thị trong Main container                            │
+│ ✓ Thêm vào mainRoute.children                                    │
+│ ✓ Đăng ký trong MainBottomTab enum                               │
+│ ✓ Navigation tự động qua Bottom Nav Bar                          │
+│ ✗ Không có back button (vì là tab)                              │
+│                                                                  │
+│ Use case: Home, Profile, Settings, Dashboard                    │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ STANDALONE ROUTE (INSIDE MAIN)                                   │
+├─────────────────────────────────────────────────────────────────┤
+│ ✓ Nằm trong MainRootRoute nhưng không thuộc Bottom Nav          │
+│ ✓ Thêm vào mainRoute.children (cùng level với MainRoute)        │
+│ ✓ Navigate bằng context.router.push()                           │
+│ ✓ Có back button tự động                                        │
+│ ✓ Có thể pass parameters                                        │
+│                                                                  │
+│ Use case: Detail pages, Edit forms, Full-screen modals          │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ TOP-LEVEL ROUTE (OUTSIDE MAIN)                                   │
+├─────────────────────────────────────────────────────────────────┤
+│ ✓ Độc lập với Main và Login routes                              │
+│ ✓ Thêm trực tiếp vào RootRouter.routes                          │
+│ ✓ Có thể là initial route                                       │
+│ ✓ Không bị ảnh hưởng bởi auth state                             │
+│                                                                  │
+│ Use case: Splash, Onboarding, Error pages                       │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ NESTED ROUTE (CHILD OF CHILD)                                    │
+├─────────────────────────────────────────────────────────────────┤
+│ ✓ Route lồng nhiều cấp                                           │
+│ ✓ Parent screen cũng phải là AutoRouter                         │
+│ ✓ Thêm children vào parent route                                │
+│ ✓ Có nested navigation stack                                    │
+│                                                                  │
+│ Use case: Wizard flows, Multi-step forms                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 🎯 **DECISION TREE: CHỌN LOẠI ROUTE**
+
+```
+Thêm màn hình mới?
+    │
+    ├─ Có Bottom Navigation Bar? ─ YES → BOTTOM NAVIGATION ROUTE
+    │                                    (MainBottomTab + mainRoute.children)
+    │                              NO ↓
+    │
+    ├─ Cần authentication? ─ YES → Thuộc MainRootRoute?
+    │                             │
+    │                             ├─ YES → STANDALONE ROUTE (INSIDE MAIN)
+    │                             │        (mainRoute.children, không trong MainRoute)
+    │                             │
+    │                             └─ NO → TOP-LEVEL ROUTE + AuthGuard
+    │                                     (RootRouter.routes + guards)
+    │                         NO ↓
+    │
+    └─ Hiển thị trước login? ─ YES → TOP-LEVEL ROUTE
+                                      (RootRouter.routes, có thể là initial)
+                              NO ↓
+                                     → Xem xét lại requirement
+```
+
+---
+
+### 📝 **CHECKLIST ĐĂNG KÝ ROUTE**
+
+#### **☑️ Cho Mọi Route:**
+```
+☐ 1. Tạo Screen class với @RoutePage() annotation
+☐ 2. Import screen vào lib/core/route/router.dart
+☐ 3. Thêm AutoRoute() vào routes tree
+☐ 4. Chạy build_runner để generate code
+☐ 5. Test navigation
+```
+
+#### **☑️ Cho Bottom Navigation Route:**
+```
+☐ 6. Thêm enum value vào MainBottomTab
+☐ 7. Update allRoutes() method
+☐ 8. Update allItems() method
+☐ 9. Thêm localization keys (en.json, vi.json)
+☐ 10. Test tab switching
+```
+
+#### **☑️ Cho Route Có Parameters:**
+```
+☐ 6. Thêm parameters vào constructor
+☐ 7. Thêm @PathParam hoặc @QueryParam annotation
+☐ 8. Define path pattern với `:paramName`
+☐ 9. Test navigation với parameters
+```
+
+#### **☑️ Cho Splash/Onboarding Route:**
+```
+☐ 6. Update RoutePath constants
+☐ 7. Set initial: true nếu cần
+☐ 8. Implement navigation logic trong screen
+☐ 9. Update main.dart initialization
+```
+
+---
+
+### 🚨 **COMMON MISTAKES & FIXES**
+
+#### **❌ Lỗi 1: Route không được generate**
+
+**Triệu chứng:**
+```
+Error: The getter 'MetroGoRoute' isn't defined for the type 'MainBottomTab'
+```
+
+**Nguyên nhân:**
+- Quên chạy `build_runner`
+- Screen không có `@RoutePage()` annotation
+- Screen chưa được import vào `router.dart`
+
+**Giải pháp:**
+```bash
+# 1. Kiểm tra @RoutePage() annotation
+# 2. Kiểm tra import trong router.dart
+# 3. Chạy build_runner
+fvm flutter pub run build_runner build --delete-conflicting-outputs
+
+# 4. Nếu vẫn lỗi, clean và build lại
+fvm flutter clean
+fvm flutter pub get
+fvm flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+---
+
+#### **❌ Lỗi 2: Bottom Navigation không hiển thị tab mới**
+
+**Triệu chứng:**
+- Build thành công nhưng tab không xuất hiện
+
+**Nguyên nhân:**
+- Quên thêm enum value vào `MainBottomTab`
+- Thứ tự enum không khớp với thứ tự trong `mainRoute.children`
+- Quên update `allRoutes()` hoặc `allItems()`
+
+**Giải pháp:**
+```dart
+// Đảm bảo thứ tự khớp:
+
+// router.dart
+AutoRoute(
+  page: MainRoute.page,
+  children: [
+    AutoRoute(page: HomeRoute.page),      // Index 0
+    AutoRoute(page: MetroGoRoute.page),   // Index 1
+    AutoRoute(page: ProfileRoute.page),   // Index 2
+  ],
+)
+
+// main_utils.dart
+enum MainBottomTab { 
+  kHome,     // Index 0
+  kMetroGo,  // Index 1
+  kAccount   // Index 2
+}
+```
+
+---
+
+#### **❌ Lỗi 3: Navigation không hoạt động**
+
+**Triệu chứng:**
+```
+Navigator operation requested with a context that does not include a Navigator
+```
+
+**Nguyên nhân:**
+- Sử dụng wrong context
+- Router chưa được setup đúng
+
+**Giải pháp:**
+```dart
+// ✅ ĐÚNG: Sử dụng context.router từ AutoRoute
+context.router.push(JobDetailRoute(jobId: '123'));
+
+// ❌ SAI: Sử dụng Navigator.of(context) trực tiếp
+Navigator.of(context).push(...); // Không khuyến khích
+```
+
+---
+
+#### **❌ Lỗi 4: Route parameters không nhận được**
+
+**Triệu chứng:**
+- Parameters luôn null hoặc undefined
+
+**Nguyên nhân:**
+- Quên `@PathParam` annotation
+- Path pattern không khớp
+
+**Giải pháp:**
+```dart
+// Screen definition
+class JobDetailScreen extends StatelessWidget {
+  final String jobId;
+
+  const JobDetailScreen({
+    super.key,
+    @PathParam('id') required this.jobId, // ← Annotation đúng
+  });
+}
+
+// Router definition
+AutoRoute(
+  page: JobDetailRoute.page,
+  path: 'job/:id', // ← :id khớp với @PathParam('id')
+)
+
+// Navigation
+context.router.push(JobDetailRoute(jobId: '123')); // ← Pass parameter
+```
+
+---
+
+### 💡 **BEST PRACTICES**
+
+#### **1. Route Naming Convention**
+```dart
+// Screen class name → Route class name
+HomeScreen       → HomeRoute
+JobListScreen    → JobListRoute
+UserProfileScreen → UserProfileRoute
+
+// Quy tắc: Bỏ "Screen", thêm "Route"
+```
+
+#### **2. Path Convention**
+```dart
+// Top-level paths: absolute path
+path: '/'
+path: '/splash'
+path: '/login'
+
+// Nested paths: relative path
+path: 'main'        // → /main
+path: 'job/:id'     // → /main/job/123
+path: 'settings'    // → /main/settings
+```
+
+#### **3. Route Organization**
+```dart
+// Group routes by feature
+final mainRoute = AutoRoute(...);
+final loginRoute = AutoRoute(...);
+final adminRoute = AutoRoute(...);
+
+// Keep routes tree readable
+@override
+List<AutoRoute> get routes => [
+  // Public routes
+  AutoRoute(path: '/', ...),
+  
+  // Auth routes
+  loginRoute,
+  
+  // Protected routes
+  mainRoute,
+  adminRoute,
+  
+  // Fallback
+  RedirectRoute(path: '*', redirectTo: '/'),
+];
+```
+
+#### **4. Route Parameters Validation**
+```dart
+@RoutePage()
+class JobDetailScreen extends StatelessWidget {
+  final String jobId;
+
+  const JobDetailScreen({
+    super.key,
+    @PathParam('id') required this.jobId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Validate parameter
+    if (jobId.isEmpty) {
+      return const Scaffold(
+        body: Center(child: Text('Invalid job ID')),
+      );
+    }
+    
+    // Use parameter
+    return Scaffold(
+      appBar: AppBar(title: Text('Job $jobId')),
+      body: ...,
+    );
+  }
+}
+```
+
+---
+
+### 🎓 **TỔNG KẾT**
+
+#### **Quy trình chuẩn để thêm màn hình mới:**
+
+1. **Xác định loại route:** Bottom Nav / Standalone / Top-level
+2. **Tạo Screen với @RoutePage()**
+3. **Import vào router.dart**
+4. **Thêm AutoRoute() vào routes tree**
+5. **Chạy build_runner**
+6. **Update MainBottomTab** (nếu là Bottom Nav route)
+7. **Test navigation**
+
+#### **Tuân thủ coding rules:**
+
+✅ **Domain Layer:** Không phụ thuộc vào routing  
+✅ **Data Layer:** Không phụ thuộc vào routing  
+✅ **Presentation Layer:** Sử dụng `context.router` cho navigation  
+✅ **Core Layer:** Chứa router configuration  
+
+---
+
+---
+
+## 4. VÍ DỤ THỰC TẾ: THÊM PROFILE SCREEN VỚI LOGOUT FEATURE
 
 ### 🎯 **Mục Tiêu:**
 - Tạo Profile Screen hiển thị thông tin user
@@ -864,7 +1780,7 @@ extension ListMainBottomTabExt on List<MainBottomTab> {
 
 ---
 
-## 4. TEMPLATE TỔNG QUÁT CHO MÀN HÌNH MỚI
+## 5. TEMPLATE TỔNG QUÁT CHO MÀN HÌNH MỚI
 
 ### 🎯 **Khi nào cần tạo layer nào?**
 

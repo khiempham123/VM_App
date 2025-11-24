@@ -1,5 +1,5 @@
 import 'package:vm_first_app/app/app_provider.dart';
-import 'package:vm_first_app/app/router.dart';
+import 'package:vm_first_app/core/route/router.dart';
 import 'package:vm_first_app/core/core.dart';
 import 'package:vm_first_app/modules/profile/profile_provider.dart';
 import 'package:flutter/material.dart';
@@ -55,27 +55,6 @@ class _ProfileView extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // User Info Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    const Divider(height: 24),
-
-                    if (user.phone != null) ...[
-                      const Divider(height: 24),
-
-                    ],
-                    const Divider(height: 24),
-
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
 
             // Logout Button
             SizedBox(

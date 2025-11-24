@@ -37,13 +37,10 @@ class RegisterProvider extends ChangeNotifier {
   }
 
   Future<void> register() async {
-    debugPrint('📝 [REGISTER_PROVIDER] Bắt đầu validate form...');
     if (!formKey.currentState!.validate()) {
-      debugPrint('❌ [REGISTER_PROVIDER] Form validation thất bại');
       return;
     }
 
-    debugPrint('✅ [REGISTER_PROVIDER] Form validation thành công');
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -59,14 +56,11 @@ class RegisterProvider extends ChangeNotifier {
             : phoneController.text.trim(),
       );
 
-      debugPrint('📝 [REGISTER_PROVIDER] Gọi AppProvider.register() với email: ${request.email}');
       await _appProvider.register(request);
 
-      debugPrint('✅ [REGISTER_PROVIDER] Đăng ký thành công!');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ [REGISTER_PROVIDER] Đăng ký thất bại: $e');
       _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();

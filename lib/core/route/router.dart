@@ -1,10 +1,11 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:vm_first_app/app/root_route.dart';
-import 'package:vm_first_app/app/route_path.dart';
+import 'package:vm_first_app/core/route/root_route.dart';
+import 'package:vm_first_app/core/route/route_path.dart';
 import 'package:vm_first_app/modules/auth/login/login_screen.dart';
 import 'package:vm_first_app/modules/auth/register/register_screen.dart';
 import 'package:vm_first_app/modules/home/screens/home_screen.dart';
 import 'package:vm_first_app/modules/profile/profile_screen.dart';
+import 'package:vm_first_app/modules/metro_go/metro_map_screen.dart';
 import 'package:vm_first_app/modules/main/main_screen.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -48,7 +49,8 @@ final mainRoute = AutoRoute(
       path: '',
       children: [
         AutoRoute(page: HomeRoute.page),
-        AutoRoute(page: ProfileRoute.page)
+        AutoRoute(page: ProfileRoute.page),
+        AutoRoute(page: MetroGoRoute.page)
       ],
     ),
     // AutoRoute(page: ExportCarRoute.page),

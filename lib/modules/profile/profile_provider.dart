@@ -15,15 +15,12 @@ class ProfileProvider extends ChangeNotifier {
   UserEntity? get currentUser => _appProvider.authInfo.value?.user;
 
   Future<void> logout() async {
-    debugPrint('🚪 [PROFILE_PROVIDER] Bắt đầu logout...');
     _isLoading = true;
     notifyListeners();
 
     try {
       await _appProvider.logout();
-      debugPrint('✅ [PROFILE_PROVIDER] Logout thành công');
     } catch (e) {
-      debugPrint('❌ [PROFILE_PROVIDER] Logout thất bại: $e');
       // Có thể show error dialog
     } finally {
       _isLoading = false;

@@ -26,13 +26,10 @@ class LoginProvider extends ChangeNotifier {
   }
 
   Future<void> login() async {
-    debugPrint('🔑 [LOGIN_PROVIDER] Bắt đầu validate form...');
     if (!formKey.currentState!.validate()) {
-      debugPrint('❌ [LOGIN_PROVIDER] Form validation thất bại');
       return;
     }
 
-    debugPrint('✅ [LOGIN_PROVIDER] Form validation thành công');
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -43,14 +40,11 @@ class LoginProvider extends ChangeNotifier {
         password: passwordController.text,
       );
 
-      debugPrint('🔑 [LOGIN_PROVIDER] Gọi AppProvider.login() với email: ${request.email}');
       await _appProvider.login(request);
 
-      debugPrint('✅ [LOGIN_PROVIDER] Đăng nhập thành công!');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ [LOGIN_PROVIDER] Đăng nhập thất bại: $e');
       _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();

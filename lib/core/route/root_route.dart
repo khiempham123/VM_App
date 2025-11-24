@@ -1,5 +1,5 @@
 import 'package:vm_first_app/app/app_provider.dart';
-import 'package:vm_first_app/app/router.dart';
+import 'package:vm_first_app/core/route/router.dart';
 import 'package:vm_first_app/core/core.dart';
 import 'package:flutter/material.dart';
 
