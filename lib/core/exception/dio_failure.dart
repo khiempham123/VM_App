@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
-import 'package:demo_login/core/core.dart';
+import 'package:vm_first_app/core/core.dart';
 
 class DioFailure extends Failure implements DioException {
   final DioException actualException;

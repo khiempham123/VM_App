@@ -1,25 +1,25 @@
 class LoginRequest {
-  final String username;
+  final String email;
   final String password;
 
   LoginRequest({
-    required this.username,
+    required this.email,
     required this.password,
   });
 }
 
 class RegisterRequest {
-  final String username;
+  final String firstName;
+  final String lastName;
   final String password;
   final String email;
-  final String? fullName;
   final String? phone;
 
   RegisterRequest({
-    required this.username,
+    required this.firstName,
+    required this.lastName,
     required this.password,
     required this.email,
-    this.fullName,
     this.phone,
   });
 }

@@ -1,4 +1,4 @@
-import 'package:demo_login/core/core.dart';
+import 'package:vm_first_app/core/core.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 extension ErrorContentParser on Failure {

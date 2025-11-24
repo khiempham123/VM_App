@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:demo_login/core_widgets/localization_widget.dart';
+import 'package:vm_first_app/core/widgets/localization_widget.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:demo_login/core/core.dart';
+import 'package:vm_first_app/core/core.dart';
 
-import 'package:demo_login/data/data.dart';
+import 'package:vm_first_app/data/data.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 

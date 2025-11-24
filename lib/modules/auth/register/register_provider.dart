@@ -1,17 +1,17 @@
-import 'package:demo_login/app/app_provider.dart';
-import 'package:demo_login/core/core.dart';
-import 'package:demo_login/domain/domain.dart';
+import 'package:vm_first_app/app/app_provider.dart';
+import 'package:vm_first_app/domain/domain.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class RegisterProvider extends ChangeNotifier {
   final AppProvider _appProvider;
 
   final formKey = GlobalKey<FormState>();
-  final usernameController = TextEditingController();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  final fullNameController = TextEditingController();
   final phoneController = TextEditingController();
 
   bool _isLoading = false;
@@ -37,32 +37,36 @@ class RegisterProvider extends ChangeNotifier {
   }
 
   Future<void> register() async {
+    debugPrint('📝 [REGISTER_PROVIDER] Bắt đầu validate form...');
     if (!formKey.currentState!.validate()) {
+      debugPrint('❌ [REGISTER_PROVIDER] Form validation thất bại');
       return;
     }
 
+    debugPrint('✅ [REGISTER_PROVIDER] Form validation thành công');
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
       final request = RegisterRequest(
-        username: usernameController.text.trim(),
+        firstName: firstNameController.text.trim(),
+        lastName: lastNameController.text.trim(),
         password: passwordController.text,
         email: emailController.text.trim(),
-        fullName: fullNameController.text.trim().isEmpty
-            ? null
-            : fullNameController.text.trim(),
         phone: phoneController.text.trim().isEmpty
             ? null
             : phoneController.text.trim(),
       );
 
+      debugPrint('📝 [REGISTER_PROVIDER] Gọi AppProvider.register() với email: ${request.email}');
       await _appProvider.register(request);
 
+      debugPrint('✅ [REGISTER_PROVIDER] Đăng ký thành công!');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ [REGISTER_PROVIDER] Đăng ký thất bại: $e');
       _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();
@@ -71,11 +75,11 @@ class RegisterProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    usernameController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
-    fullNameController.dispose();
     phoneController.dispose();
     super.dispose();
   }

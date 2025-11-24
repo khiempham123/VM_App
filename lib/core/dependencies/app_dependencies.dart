@@ -1,30 +1,31 @@
-import 'package:demo_login/app/app_provider.dart';
-import 'package:demo_login/app/router.dart';
+import 'package:vm_first_app/app/app_provider.dart';
+import 'package:vm_first_app/app/router.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+//import 'package:flutter/foundation.dart';
 
-import 'package:demo_login/core/core.dart';
+import 'package:vm_first_app/core/core.dart';
 
-import 'package:demo_login/data/data.dart';
+import 'package:vm_first_app/data/data.dart';
 
 final locator = GetIt.instance;
 
 class AppDependencies {
   static Future<AppDependencies> init(
     SharedPreferencesKeyValueStorage storage,
-    NativeBridgeImpl nativeBridge,
   ) async {
+
     final instance = AppDependencies();
     locator.registerSingleton(instance);
+
     //MISC--------
     locator.registerSingleton(RootRouter());
-    if (!locator.isRegistered<NativeBridge>()) {
-      locator.registerLazySingleton<NativeBridge>(() => nativeBridge);
-    }
+
     locator.registerLazySingleton(() => const FlutterSecureStorage());
+
     locator.registerLazySingleton<KeyValueStorage>(() => storage);
+
     locator.registerLazySingleton(() => LocaleHandler());
-    locator.registerLazySingleton(() => AppProvider(locator()));
 
     locator.registerLazySingleton(
       () => HttpClient(
@@ -40,12 +41,18 @@ class AppDependencies {
         ],
       ),
     );
+
     locator.registerLazySingleton(
       () => AuthRequestInterceptor(httpClient: locator(), storage: locator()),
     );
+
     //API---------
     registerServices();
+
     registerRepositories();
+
+    // Register AppProvider after all dependencies are set up
+    locator.registerLazySingleton(() => AppProvider(locator()));
 
     return instance;
   }

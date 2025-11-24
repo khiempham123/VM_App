@@ -7,17 +7,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
-import 'package:demo_login/core/core.dart';
+import 'package:vm_first_app/core/core.dart';
 
-final kAuthInfoKey = "${Flavor.current.toString()}auth_info";
-const kBaseUrl = 'https://api.openweathermap.org/data/2.5';
-const kBaseUrlDev = 'https://api.openweathermap.org/data/2.5';
+final kAuthInfoKey = "auth_info";
+const kBaseUrl = 'https://dricon.fastmap.vn';
 
-String get baseUrlHandler => switch (Flavor.current) {
-  Flavor.prod => kBaseUrl,
-  Flavor.dev => kBaseUrlDev,
-  _ => kBaseUrlDev,
-};
+String get baseUrlHandler => kBaseUrl;
 
 class HttpClient {
   final Dio dio;
@@ -64,7 +59,7 @@ class HttpClient {
   }
 
   void updateLocale(String localeStr) {
-    dio.options.headers['X-VSM-LANG'] = localeStr;
+    dio.options.headers['X-VM-LANG'] = localeStr;
   }
 
   void setSession({String? accessToken, String? refreshToken, int? expiresIn}) {
@@ -84,6 +79,7 @@ class HttpClient {
     final platform = Platform.isAndroid ? "android" : "ios";
     final dio = Dio(
       BaseOptions(
+        baseUrl: kBaseUrl,
         receiveDataWhenStatusError: true,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 60),
@@ -91,8 +87,8 @@ class HttpClient {
         headers: {
           'Content-Type': 'application/json',
           'accept': '*/*',
-          'X-VSM-PLATFORM': platform,
-          'X-VSM-LANG': localeStr,
+          'X-VM-PLATFORM': platform,
+          'X-VM-LANG': localeStr,
         },
       ),
     );

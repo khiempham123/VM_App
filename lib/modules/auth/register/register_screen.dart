@@ -1,7 +1,7 @@
-import 'package:demo_login/app/app_provider.dart';
-import 'package:demo_login/app/router.dart';
-import 'package:demo_login/core/core.dart';
-import 'package:demo_login/modules/account/register/register_provider.dart';
+import 'package:vm_first_app/app/app_provider.dart';
+import 'package:vm_first_app/app/router.dart';
+import 'package:vm_first_app/core/core.dart';
+import 'package:vm_first_app/modules/auth/register/register_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -74,10 +74,10 @@ class _RegisterView extends StatelessWidget {
 
                   // Username Field
                   TextFormField(
-                    controller: provider.usernameController,
+                    controller: provider.firstNameController,
                     decoration: const InputDecoration(
-                      labelText: 'Username *',
-                      hintText: 'Choose a username',
+                      labelText: 'FirstName *',
+                      hintText: 'Enter your first name',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
                     validator: (value) {
@@ -89,6 +89,18 @@ class _RegisterView extends StatelessWidget {
                       }
                       return null;
                     },
+                    enabled: !provider.isLoading,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Last Name Field
+                  TextFormField(
+                    controller: provider.lastNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Last Name *',
+                      hintText: 'Enter your last name',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
                     enabled: !provider.isLoading,
                   ),
                   const SizedBox(height: 16),
@@ -111,18 +123,6 @@ class _RegisterView extends StatelessWidget {
                       }
                       return null;
                     },
-                    enabled: !provider.isLoading,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Full Name Field (Optional)
-                  TextFormField(
-                    controller: provider.fullNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Full Name (Optional)',
-                      hintText: 'Enter your full name',
-                      prefixIcon: Icon(Icons.badge_outlined),
-                    ),
                     enabled: !provider.isLoading,
                   ),
                   const SizedBox(height: 16),
@@ -151,7 +151,7 @@ class _RegisterView extends StatelessWidget {
                       suffixIcon: IconButton(
                         icon: Icon(
                           provider.obscurePassword
-                              ? Icons.visibility_outline
+                              ? Icons.visibility
                               : Icons.visibility_off_outlined,
                         ),
                         onPressed: provider.togglePasswordVisibility,
@@ -181,7 +181,7 @@ class _RegisterView extends StatelessWidget {
                       suffixIcon: IconButton(
                         icon: Icon(
                           provider.obscureConfirmPassword
-                              ? Icons.visibility_outline
+                              ? Icons.visibility
                               : Icons.visibility_off_outlined,
                         ),
                         onPressed: provider.toggleConfirmPasswordVisibility,

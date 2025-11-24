@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:demo_login/core/theme/app_colors.dart';
+import 'package:vm_first_app/core/theme/app_colors.dart';
 
 class AppTextStyles {
   // Headings

@@ -1,7 +1,7 @@
-import 'package:demo_login/app/app_provider.dart';
-import 'package:demo_login/app/router.dart';
-import 'package:demo_login/core/core.dart';
-import 'package:demo_login/modules/account/login/login_provider.dart';
+import 'package:vm_first_app/app/app_provider.dart';
+import 'package:vm_first_app/app/router.dart';
+import 'package:vm_first_app/core/core.dart';
+import 'package:vm_first_app/modules/auth/login/login_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -71,15 +71,15 @@ class _LoginView extends StatelessWidget {
 
                   // Username Field
                   TextFormField(
-                    controller: provider.usernameController,
+                    controller: provider.emailController,
                     decoration: const InputDecoration(
-                      labelText: 'Username',
-                      hintText: 'Enter your username',
+                      labelText: 'Email',
+                      hintText: 'Enter your email',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
+                        return 'Please enter your email';
                       }
                       return null;
                     },
@@ -98,7 +98,7 @@ class _LoginView extends StatelessWidget {
                       suffixIcon: IconButton(
                         icon: Icon(
                           provider.obscurePassword
-                              ? Icons.visibility_outline
+                              ? Icons.visibility
                               : Icons.visibility_off_outlined,
                         ),
                         onPressed: provider.togglePasswordVisibility,

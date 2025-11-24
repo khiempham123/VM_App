@@ -32,25 +32,25 @@ class AuthInfo {
 
 class UserEntity {
   final String id;
-  final String username;
+  final String firstName;
+  final String lastName;
   final String email;
-  final String? fullName;
   final String? phone;
 
   UserEntity({
     required this.id,
-    required this.username,
+    required this.firstName,
+    required this.lastName,
     required this.email,
-    this.fullName,
     this.phone,
   });
 
   factory UserEntity.fromJson(Map<String, dynamic> json) {
     return UserEntity(
       id: json['id'] as String? ?? '',
-      username: json['username'] as String? ?? '',
+      firstName: json['firstName'] as String? ?? '',
+      lastName: json['lastName'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      fullName: json['fullName'] as String?,
       phone: json['phone'] as String?,
     );
   }
@@ -58,9 +58,9 @@ class UserEntity {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'username': username,
+      'firstName': firstName,
+      'lastName': lastName,
       'email': email,
-      'fullName': fullName,
       'phone': phone,
     };
   }

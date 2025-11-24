@@ -1,10 +1,11 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:demo_login/app/root_route.dart';
-import 'package:demo_login/app/route_path.dart';
-import 'package:demo_login/modules/account/login/login_screen.dart';
-import 'package:demo_login/modules/account/register/register_screen.dart';
-import 'package:demo_login/modules/home/screens/home_screen.dart';
-import 'package:demo_login/modules/main/main_screen.dart';
+import 'package:vm_first_app/app/root_route.dart';
+import 'package:vm_first_app/app/route_path.dart';
+import 'package:vm_first_app/modules/auth/login/login_screen.dart';
+import 'package:vm_first_app/modules/auth/register/register_screen.dart';
+import 'package:vm_first_app/modules/home/screens/home_screen.dart';
+import 'package:vm_first_app/modules/profile/profile_screen.dart';
+import 'package:vm_first_app/modules/main/main_screen.dart';
 import 'package:flutter/cupertino.dart';
 
 export 'package:auto_route/auto_route.dart';
@@ -45,7 +46,10 @@ final mainRoute = AutoRoute(
       // guards: [AuthGuard],
       page: MainRoute.page,
       path: '',
-      children: [AutoRoute(page: HomeRoute.page)],
+      children: [
+        AutoRoute(page: HomeRoute.page),
+        AutoRoute(page: ProfileRoute.page)
+      ],
     ),
     // AutoRoute(page: ExportCarRoute.page),
     RedirectRoute(path: '*', redirectTo: ''),
@@ -63,14 +67,11 @@ final loginRoute = AutoRoute(
   page: LoginRootRoute.page,
   children: [
     AutoRoute(
-      // guards: [AuthGuard],
-      page: StartupRoute.page,
+      page: LoginRoute.page,
       path: '',
-      children: [
-        AutoRoute(page: LoginRoute.page),
-        AutoRoute(page: RegisterRoute.page),
-      ],
+      initial: true,
     ),
+    AutoRoute(page: RegisterRoute.page),
     RedirectRoute(path: '*', redirectTo: ''),
   ],
 );
@@ -84,6 +85,8 @@ class LoginRootScreen extends AutoRouter {
 class StartupScreen extends AutoRouter {
   const StartupScreen({super.key});
 }
+
+
 
 extension RoutingControllerUtils on RoutingController {
   T? findRouter<T extends RoutingController>({String? routeName}) {

@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import 'package:demo_login/core/exception/dio_failure.dart';
+import 'package:vm_first_app/core/exception/dio_failure.dart';
 
 ///
 /// Chuyển tất cả các DioException thành DioFailure để có thể dễ dàng xử lý trên UI

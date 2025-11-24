@@ -1,4 +1,4 @@
-import 'package:demo_login/data/dto/auth_dto.dart';
+import 'package:vm_first_app/data/dto/auth_dto.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
@@ -8,10 +8,13 @@ part 'auth_service.g.dart';
 abstract class AuthService {
   factory AuthService(Dio dio, {String? baseUrl}) = _AuthService;
 
-  @POST('/fw-api/login')
+  @POST('/fw-api/settings/login')
   Future<AuthResponseDto> login(@Body() LoginDto request);
 
-  @POST('/fw-api/register')
+  @POST('/fw-api/settings/register')
   Future<AuthResponseDto> register(@Body() RegisterDto request);
+
+  @POST('/fw-api/settings/logout')
+  Future<void> logout();
 }
 

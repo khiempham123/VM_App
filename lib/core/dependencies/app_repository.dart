@@ -1,17 +1,21 @@
-import 'package:demo_login/core/core.dart';
-import 'package:demo_login/data/data.dart';
-import 'package:demo_login/domain/domain.dart';
+//import 'package:flutter/foundation.dart';
+import 'package:vm_first_app/core/core.dart';
+import 'package:vm_first_app/data/data.dart';
+import 'package:vm_first_app/domain/domain.dart';
 
 void registerServices() {
-  // locator.registerLazySingleton(
-  //   instanceName: "weather_service_base",
-  //       () => WeatherService.base(locator()),
-  // );
+  locator.registerLazySingleton(
+    () => AuthService(locator<HttpClient>().dio),
+  );
 }
 
 void registerRepositories() {
   //init in locator
-  locator.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(locator(), locator()),
-  );
+  try {
+    locator.registerLazySingleton<AuthRepository>(
+      () => AuthRepositoryImpl(locator(), locator()),
+    );
+  } catch (e) {
+    rethrow;
+  }
 }

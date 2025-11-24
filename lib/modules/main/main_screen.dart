@@ -1,6 +1,6 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:demo_login/modules/main/bottom_navigation_bar.dart';
-import 'package:demo_login/modules/main/main_utils.dart';
+import 'package:vm_first_app/modules/main/bottom_navigation_bar.dart';
+import 'package:vm_first_app/modules/main/main_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

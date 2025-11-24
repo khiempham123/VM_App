@@ -1,4 +1,4 @@
-import 'package:demo_login/app/router.dart';
+import 'package:vm_first_app/app/router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -11,7 +11,7 @@ extension ListMainBottomTabExt on List<MainBottomTab> {
         case MainBottomTab.kHome:
           return const HomeRoute();
         case MainBottomTab.kAccount:
-          return const HomeRoute();
+          return const ProfileRoute();
       }
     }).cast<PageRouteInfo<dynamic>>().toList();
   }
@@ -29,7 +29,7 @@ extension ListMainBottomTabExt on List<MainBottomTab> {
           return BottomNavigationBarItem(
             icon: const Icon(Icons.people, size: 20),
             activeIcon: const Icon(Icons.people_alt_rounded, size: 20),
-            label: "home_tab".tr(),
+            label: "profile_tab".tr(),
           );
       }
     }).toList();

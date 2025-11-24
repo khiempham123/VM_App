@@ -21,7 +21,7 @@ abstract class KeyValueStorage {
 }
 
 class SharedPreferencesKeyValueStorage implements KeyValueStorage {
-  static const String kTag = "KVS";
+  static const String kTag = "VM";
   late SharedPreferences _pref;
   final _prefLoaded = Completer<bool>();
 

@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:demo_login/core/core.dart';
-import 'package:demo_login/data/data.dart';
-import 'package:demo_login/domain/domain.dart';
+import 'package:vm_first_app/core/core.dart';
+import 'package:vm_first_app/data/data.dart';
+import 'package:vm_first_app/domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -39,6 +39,12 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future logout() async {
+    try{
+    await _authRepo.logout();}
+    catch(e)
+    {
+      debugPrint('$e');
+    }
     isLoggedIn.add(false);
     authInfo.add(null);
     await _authRepo.setAuthInfo(null);
@@ -55,45 +61,68 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> login(LoginRequest request) async {
-    final authResponse = await _authRepo.login(request);
-    await _authRepo.setAuthInfo(authResponse);
+    //debugPrint('🔑 [APP_PROVIDER] Bắt đầu login với email: ${request.email}');
+    try {
+      final authResponse = await _authRepo.login(request);
 
-    // Update session in HttpClient
-    locator<HttpClient>().setSession(
-      accessToken: authResponse.accessToken,
-      refreshToken: authResponse.refreshToken,
-      expiresIn: authResponse.expiresIn,
-    );
+      await _authRepo.setAuthInfo(authResponse);
 
-    authInfo.add(authResponse);
-    isLoggedIn.add(true);
+      // Update session in HttpClient
+      locator<HttpClient>().setSession(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        expiresIn: authResponse.expiresIn,
+      );
+
+      authInfo.add(authResponse);
+      isLoggedIn.add(true);
+      notifyListeners();
+    } catch (e) {
+      // Re-throw để LoginProvider có thể handle
+      rethrow;
+    }
   }
 
   Future<void> register(RegisterRequest request) async {
-    final authResponse = await _authRepo.register(request);
-    await _authRepo.setAuthInfo(authResponse);
+    try {
+      final authResponse = await _authRepo.register(request);
 
-    // Update session in HttpClient
-    locator<HttpClient>().setSession(
-      accessToken: authResponse.accessToken,
-      refreshToken: authResponse.refreshToken,
-      expiresIn: authResponse.expiresIn,
-    );
+      await _authRepo.setAuthInfo(authResponse);
 
-    authInfo.add(authResponse);
-    isLoggedIn.add(true);
+      // Update session in HttpClient
+      locator<HttpClient>().setSession(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        expiresIn: authResponse.expiresIn,
+      );
+
+      authInfo.add(authResponse);
+      isLoggedIn.add(true);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> restore() async {
-    final savedAuthInfo = await _authRepo.getAuthInfo();
-    if (savedAuthInfo != null) {
-      locator<HttpClient>().setSession(
-        accessToken: savedAuthInfo.accessToken,
-        refreshToken: savedAuthInfo.refreshToken,
-        expiresIn: savedAuthInfo.expiresIn,
-      );
-      authInfo.add(savedAuthInfo);
-      isLoggedIn.add(true);
+    try {
+      final savedAuthInfo = await _authRepo.getAuthInfo();
+
+      if (savedAuthInfo != null) {
+        locator<HttpClient>().setSession(
+          accessToken: savedAuthInfo.accessToken,
+          refreshToken: savedAuthInfo.refreshToken,
+          expiresIn: savedAuthInfo.expiresIn,
+        );
+        authInfo.add(savedAuthInfo);
+        isLoggedIn.add(true);
+      } else {
+        isLoggedIn.add(false);
+      }
+      notifyListeners();
+    } catch (e) {
+      isLoggedIn.add(false);
+      notifyListeners();
     }
   }
 
