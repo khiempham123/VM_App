@@ -10,4 +10,5 @@ class ErrorCodes {
   static const String vinCodeInvalid = "vincode_invalid";
   static const String vinCodeExist = "vincode_exist";
   static const String progressUnfinished = "progress_unfinished";
+
 }

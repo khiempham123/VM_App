@@ -14,6 +14,9 @@ class ProfileProvider extends ChangeNotifier {
   // Lấy thông tin user từ AppProvider
   UserEntity? get currentUser => _appProvider.authInfo.value?.user;
 
+  // Future<UserEntity> getProfile () async {
+  //
+  // }
   Future<void> logout() async {
     _isLoading = true;
     notifyListeners();

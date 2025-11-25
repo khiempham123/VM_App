@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class CurlInterceptor extends Interceptor {
   final bool? printOnSuccess;
@@ -12,7 +13,6 @@ class CurlInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     _renderCurlRepresentation(err.requestOptions);
-
     return handler.next(err); //continue
   }
 
@@ -21,7 +21,32 @@ class CurlInterceptor extends Interceptor {
     if (printOnSuccess != null && printOnSuccess == true) {
       _renderCurlRepresentation(response.requestOptions);
     }
+    final data = response.data;
+    if(data is Map<String, dynamic>) {
+      final code = data['code'] as String ?? '';
+      final message = data['message'] as String ?? '';
+      final realData = data['data'];
+      //ToDo: try refactor AuthDto because the format data respone is difference.
+      // My format like { "code": "", "message": "", "userId": ""}
+      // But the format from api like { "code": "", "message": "", "data": {"userId": ""}}
+      debugPrint('$realData');
+      if(code !='') {
+        debugPrint('Message from api: $message');
+        debugPrint('Code from api: $code');
+        final error = DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: message,
+          message: message,
+        );
+        handler.reject(error);
+        return;
+      }
+        response.data = realData;
+        debugPrint('Exactly data');
 
+    }
     return handler.next(response); //continue
   }
 

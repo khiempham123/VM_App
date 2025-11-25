@@ -24,7 +24,7 @@ class DioFailure extends Failure implements DioException {
       'stackTrace': dioException.stackTrace,
     };
 
-    if (dioException.response?.statusCode == 404) {
+    if (dioException.response?.data == null) {
       return DioFailure._(
         code: ErrorCodes.notFound,
         error: ErrorCodes.notFound,
@@ -67,9 +67,31 @@ class DioFailure extends Failure implements DioException {
         info: info,
       );
     }
-
-    // parse api error from response
+    //ToDo: After refactor the AuthDTO must refactor the parse method to make it fit with the new format
+    // PARSE BUSINESS ERROR từ ResponseValidatorInterceptor
+    // Backend format: { "code": "MSG_ERROR_...", "message": "...", "data": null }
     final respData = dioException.response?.data;
+
+    if (respData is Map<String, dynamic>) {
+      final code = respData['code'] as String?;
+      final message = respData['message'] as String?;
+
+      // Check nếu là business error (code có giá trị)
+      if (code != null && code.isNotEmpty) {
+        // Map error code sang user-friendly message
+        final userMessage = message;
+
+        return DioFailure._(
+          code: code,
+          error: code,
+          actualException: dioException,
+          message: userMessage,
+          info: info,
+        );
+      }
+    }
+
+    // parse api error from response (old format)
     if (respData case {
       'code': String code,
       'error': String error,

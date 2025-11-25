@@ -54,16 +54,31 @@ class _ProfileView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-
-
+            // Change Password Button
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: provider.isLoading
+                    ? null // disable khi nguoi dung click vao => tranh spam
+                    : () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.lock),
+                label: const Text('Change Password'),
+              ),
+            ),
+            const SizedBox(height: 24),
             // Logout Button
             SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton.icon(
                 onPressed: provider.isLoading
-                    ? null
-                    : () => _showLogoutDialog(context, provider),
+                    ? null // disable khi nguoi dung click vao => tranh spam
+                    : () => _showLogoutDialog(context, provider), // show model to confirm logout
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
@@ -104,7 +119,7 @@ class _ProfileView extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              provider.logout();
+              provider.logout(); // goi logout trong provider
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

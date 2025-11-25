@@ -16,7 +16,6 @@ class AppProvider extends ChangeNotifier {
 
   final authInfo = BehaviorSubject<AuthInfo?>.seeded(null);
   final isLoggedIn = BehaviorSubject<bool>.seeded(false);
-
   final List<StreamSubscription> _subscriptions = [];
 
   AppProvider(this._storage) {
@@ -39,17 +38,28 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future logout() async {
-    try{
-    await _authRepo.logout();}
-    catch(e)
-    {
+    try {
+      await _authRepo.logout(); // call api logout
+    } catch(e) {
       debugPrint('$e');
     }
-    isLoggedIn.add(false);
-    authInfo.add(null);
-    await _authRepo.setAuthInfo(null);
+
+    // ✅ Backup cached email trước khi clear
+    final cachedEmail = await _storage.getString('email');
+
+    isLoggedIn.add(false); // update stream -> rebuild rootpage
+    authInfo.add(null); // noti UI now -> navigate to login
+    await _authRepo.setAuthInfo(null); // delete token in local storage
     locator<HttpClient>().clearSession();
+
+    // Clear all storage
     await _storage.clear();
+
+    // ✅ Restore cached email sau khi clear (nếu có)
+    // User vẫn thấy email gợi ý khi login lại
+    if (cachedEmail != null && cachedEmail.isNotEmpty) {
+      await _storage.setString('email', cachedEmail);
+    }
   }
 
   Future<void> forceLogout(_) async {
@@ -61,12 +71,10 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> login(LoginRequest request) async {
-    //debugPrint('🔑 [APP_PROVIDER] Bắt đầu login với email: ${request.email}');
     try {
       final authResponse = await _authRepo.login(request);
 
       await _authRepo.setAuthInfo(authResponse);
-
       // Update session in HttpClient
       locator<HttpClient>().setSession(
         accessToken: authResponse.accessToken,
@@ -81,6 +89,21 @@ class AppProvider extends ChangeNotifier {
       // Re-throw để LoginProvider có thể handle
       rethrow;
     }
+  }
+
+  Future<void> cachedEmail(String email) async
+  {
+    await _storage.setString('email', email);
+  }
+
+  /// Lấy cached email từ SharedPreferences
+  Future<String?> getCachedEmail() async {
+    return await _storage.getString('email');
+  }
+
+  /// Xóa cached email
+  Future<void> clearCachedEmail() async {
+    await _storage.removeKey('email');
   }
 
   Future<void> register(RegisterRequest request) async {
@@ -137,4 +160,6 @@ class AppProvider extends ChangeNotifier {
       authInfo.add(savedAuthInfo);
     }
   }
+
+
 }

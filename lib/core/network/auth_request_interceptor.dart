@@ -169,10 +169,11 @@ class AuthRequestInterceptor extends Interceptor {
           ),
         );
         //TODO: doi lai dung api refresh token
-        final url = "$baseUrl/vf/iam/api/v0/refresh-token";
+        final url = "$baseUrl/fw-api/settings/refresh-token";
         final request = <String, dynamic>{'refreshToken': refreshToken};
         final response = await dio.post(url, data: request);
         final responseJson = response.data;
+        debugPrint(responseJson);
         _lastRefreshTokenDate = DateTime.now();
         // final newSession = tokenResponse.session;
         // if (newSession.refreshToken.isEmpty) {

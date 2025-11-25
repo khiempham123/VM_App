@@ -116,6 +116,19 @@ class _LoginView extends StatelessWidget {
                     enabled: !provider.isLoading,
                   ),
 
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    child: CheckboxListTile(
+                      contentPadding: const EdgeInsets.only(left: 0),
+                      title: const Text('Remember me'),
+                      checkColor: Colors.white,
+                      value: provider.isRememberMe,
+                      onChanged: (newValue) {
+                        provider.toggleRememberMe(newValue) ;
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                  ),
                   // Error Message
                   if (provider.errorMessage != null) ...[
                     const SizedBox(height: 16),
