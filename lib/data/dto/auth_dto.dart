@@ -89,9 +89,9 @@ class AuthResponseDto {
   factory AuthResponseDto.fromJson(Map<String, dynamic> json) {
     return AuthResponseDto(
       // Parse primitive fields
-      accessToken: json['accessToken'] as String?,
-      refreshToken: json['refreshToken'] as String?,
-      expiresIn: json['expiresIn'] as int?,
+      accessToken: json['access_token'] as String?,
+      refreshToken: json['refresh_token'] as String?,
+      expiresIn: json['expires_in'] as int?,
 
       // Nếu json['user'] không null → gọi UserDto.fromJson()
       // Đây là cách Data Layer "biết" đâu là User info
@@ -152,7 +152,29 @@ class UserDto {
 ///
 /// - DTO: can nullable fields
 /// - Entity: Business logic structure, can be non-nullable
+class ChangePasswordDto {
+  final String oldPassword;
+  final String newPassword;
 
+  ChangePasswordDto({
+    required this.oldPassword,
+    required this.newPassword,
+  });
+
+  factory ChangePasswordDto.fromJson(Map<String, dynamic> json) {
+    return ChangePasswordDto(
+      oldPassword: json['oldPassword'] as String,
+      newPassword: json['newPassword'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    };
+  }
+}
 
 extension AuthResponseDtoX on AuthResponseDto {
   /// Convert DTO → Entity

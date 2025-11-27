@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:vm_first_app/core/network/http_client.dart';
 import 'package:vm_first_app/data/dto/auth_dto.dart';
 import 'package:vm_first_app/data/services/auth_service.dart';
@@ -7,7 +6,6 @@ import 'package:vm_first_app/domain/entities/auth_entity.dart';
 import 'package:vm_first_app/domain/entities/auth_request.dart';
 import 'package:vm_first_app/domain/repository/auth_repository.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:vm_first_app/data/database/key_value_store.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final FlutterSecureStorage storage;
   final AuthService authService;
@@ -78,6 +76,14 @@ class AuthRepositoryImpl implements AuthRepository {
     return response.toEntity();
   }
 
+  @override
+  Future<void> changePassword(ChangePasswordRequest request) async {
+    final dto = ChangePasswordDto(
+      oldPassword: request.oldPassword,
+      newPassword: request.newPassword,
+    );
+    await authService.changePassword(dto);
+  }
   @override
   Future<void> logout() async {
     await authService.logout();

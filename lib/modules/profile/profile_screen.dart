@@ -4,7 +4,9 @@ import 'package:vm_first_app/core/core.dart';
 import 'package:vm_first_app/modules/profile/profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+enum RouteKey {
+  kChangePassword,
+}
 @RoutePage()
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -59,9 +61,7 @@ class _ProfileView extends StatelessWidget {
               width: double.infinity,
               height: 56,
               child: ElevatedButton.icon(
-                onPressed: provider.isLoading
-                    ? null // disable khi nguoi dung click vao => tranh spam
-                    : () {},
+                onPressed: () => context.router.push(const ChangePasswordRoute()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -131,4 +131,5 @@ class _ProfileView extends StatelessWidget {
       ),
     );
   }
+
 }

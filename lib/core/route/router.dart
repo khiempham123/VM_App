@@ -6,6 +6,7 @@ import 'package:vm_first_app/modules/auth/register/register_screen.dart';
 import 'package:vm_first_app/modules/home/screens/home_screen.dart';
 import 'package:vm_first_app/modules/profile/profile_screen.dart';
 import 'package:vm_first_app/modules/metro_go/metro_map_screen.dart';
+import 'package:vm_first_app/modules/auth/change_password/change_password_screen.dart';
 import 'package:vm_first_app/modules/main/main_screen.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -50,9 +51,10 @@ final mainRoute = AutoRoute(
       children: [
         AutoRoute(page: HomeRoute.page),
         AutoRoute(page: ProfileRoute.page),
-        AutoRoute(page: MetroMapRoute.page)
+        AutoRoute(page: MetroMapRoute.page),
       ],
     ),
+    AutoRoute(page: ChangePasswordRoute.page),
     // AutoRoute(page: ExportCarRoute.page),
     RedirectRoute(path: '*', redirectTo: ''),
   ],

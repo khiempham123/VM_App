@@ -11,6 +11,22 @@
 part of 'router.dart';
 
 /// generated route for
+/// [ChangePasswordScreen]
+class ChangePasswordRoute extends PageRouteInfo<void> {
+  const ChangePasswordRoute({List<PageRouteInfo>? children})
+    : super(ChangePasswordRoute.name, initialChildren: children);
+
+  static const String name = 'ChangePasswordRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ChangePasswordScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [HomeScreen]
 class HomeRoute extends PageRouteInfo<void> {
   const HomeRoute({List<PageRouteInfo>? children})

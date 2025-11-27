@@ -23,13 +23,12 @@ class CurlInterceptor extends Interceptor {
     }
     final data = response.data;
     if(data is Map<String, dynamic>) {
-      final code = data['code'] as String ?? '';
-      final message = data['message'] as String ?? '';
+      final code = data['code'] as String? ?? '';
+      final message = data['message'] as String? ?? '';
       final realData = data['data'];
       //ToDo: try refactor AuthDto because the format data respone is difference.
       // My format like { "code": "", "message": "", "userId": ""}
       // But the format from api like { "code": "", "message": "", "data": {"userId": ""}}
-      debugPrint('$realData');
       if(code !='') {
         debugPrint('Message from api: $message');
         debugPrint('Code from api: $code');

@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:vm_first_app/core/core.dart';
 
@@ -73,63 +73,64 @@ class DioFailure extends Failure implements DioException {
     final respData = dioException.response?.data;
 
     if (respData is Map<String, dynamic>) {
-      final code = respData['code'] as String?;
-      final message = respData['message'] as String?;
-
+      final code = respData['code'] as String? ?? '';
+      final message = respData['message'] as String? ?? '';
+      debugPrint('Message when failure: $message');
+      debugPrint('Code when failure: $code');
       // Check nếu là business error (code có giá trị)
-      if (code != null && code.isNotEmpty) {
+      if (code != '' ) {
         // Map error code sang user-friendly message
-        final userMessage = message;
+        //final userMessage = message;
 
         return DioFailure._(
           code: code,
           error: code,
           actualException: dioException,
-          message: userMessage,
+          message: message,
           info: info,
         );
       }
     }
 
     // parse api error from response (old format)
-    if (respData case {
-      'code': String code,
-      'error': String error,
-      'message': String message,
-    }) {
-      info['data'] = respData['data'];
-
-      return DioFailure._(
-        code: code,
-        error: error,
-        actualException: dioException,
-        message: message,
-        info: info,
-      );
-    } else if (respData case {'code': String code, 'message': List messages}) {
-      return DioFailure._(
-        code: code,
-        error: 'err_$code',
-        actualException: dioException,
-        message: messages.join('\n'),
-        info: info,
-      );
-    } else if (jsonDecode(respData) case {
-      'code': String code,
-      'error': String error,
-      'message': String message,
-    }) {
-      final res = jsonDecode(respData);
-      info['data'] = (res as Map<String, dynamic>)['data'];
-
-      return DioFailure._(
-        code: code,
-        error: error,
-        actualException: dioException,
-        message: message,
-        info: info,
-      );
-    }
+    // if (respData case {
+    //   'code': String code,
+    //   'error': String error,
+    //   'message': String message,
+    // }) {
+    //   info['data'] = respData['data'];
+    //
+    //   return DioFailure._(
+    //     code: code,
+    //     error: error,
+    //     actualException: dioException,
+    //     message: message,
+    //     info: info,
+    //   );
+    // } else if (respData case {'code': String code, 'message': List messages}) {
+    //   return DioFailure._(
+    //     code: code,
+    //     error: 'err_$code',
+    //     actualException: dioException,
+    //     message: messages.join('\n'),
+    //     info: info,
+    //   );
+    // } else if (jsonDecode(respData) case {
+    //   'code': String code,
+    //   'error': String error,
+    //   'message': String message,
+    // }) {
+    //   final res = jsonDecode(respData);
+    //   info['data'] = (res as Map<String, dynamic>)['data'];
+    //
+    //   return DioFailure._(
+    //     code: code,
+    //     error: error,
+    //     actualException: dioException,
+    //     message: message,
+    //     info: info,
+    //   );
+    // }
 
     return DioFailure._(
       code: ErrorCodes.unknown,

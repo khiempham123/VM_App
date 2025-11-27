@@ -14,6 +14,9 @@ abstract class AuthService {
   @POST('/fw-api/settings/register')
   Future<AuthResponseDto> register(@Body() RegisterDto request);
 
+  @PUT('/fw-api/settings/password')
+  Future<void> changePassword(@Body() ChangePasswordDto request);
+
   @POST('/fw-api/settings/logout')
   Future<void> logout();
 }

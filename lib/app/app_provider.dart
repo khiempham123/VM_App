@@ -44,7 +44,7 @@ class AppProvider extends ChangeNotifier {
       debugPrint('$e');
     }
 
-    // ✅ Backup cached email trước khi clear
+    // Backup cached email trước khi clear
     final cachedEmail = await _storage.getString('email');
 
     isLoggedIn.add(false); // update stream -> rebuild rootpage
@@ -55,7 +55,7 @@ class AppProvider extends ChangeNotifier {
     // Clear all storage
     await _storage.clear();
 
-    // ✅ Restore cached email sau khi clear (nếu có)
+    // Restore cached email sau khi clear (nếu có)
     // User vẫn thấy email gợi ý khi login lại
     if (cachedEmail != null && cachedEmail.isNotEmpty) {
       await _storage.setString('email', cachedEmail);
@@ -91,17 +91,14 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> cachedEmail(String email) async
-  {
+  Future<void> cachedEmail(String email) async {
     await _storage.setString('email', email);
   }
 
-  /// Lấy cached email từ SharedPreferences
   Future<String?> getCachedEmail() async {
     return await _storage.getString('email');
   }
 
-  /// Xóa cached email
   Future<void> clearCachedEmail() async {
     await _storage.removeKey('email');
   }
@@ -127,11 +124,21 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> changePassword(ChangePasswordRequest request) async {
+    try {
+      await _authRepo.changePassword(request);
+      isLoggedIn.add(false);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
   Future<void> restore() async {
     try {
       final savedAuthInfo = await _authRepo.getAuthInfo();
 
       if (savedAuthInfo != null) {
+        debugPrint('session is setted');
         locator<HttpClient>().setSession(
           accessToken: savedAuthInfo.accessToken,
           refreshToken: savedAuthInfo.refreshToken,

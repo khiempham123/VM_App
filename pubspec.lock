@@ -25,6 +25,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
+  archive:
+    dependency: transitive
+    description:
+      name: archive
+      sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.7"
   args:
     dependency: transitive
     description:
@@ -57,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.2.6"
+  benchmark:
+    dependency: transitive
+    description:
+      name: benchmark
+      sha256: cb3eeea01e3f054df76ee9775ca680f3afa5f19f39b2bb426ba78ba27654493b
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -177,6 +193,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  dart_sort_queue:
+    dependency: transitive
+    description:
+      name: dart_sort_queue
+      sha256: f3353ba8b4850e072d3368757f62edb79af34a9703c3e3df9c59342721f5f5b1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2+3"
   dart_style:
     dependency: transitive
     description:
@@ -270,6 +294,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_dotenv:
+    dependency: "direct dev"
+    description:
+      name: flutter_dotenv
+      sha256: d4130c4a43e0b13fefc593bc3961f2cb46e30cb79e253d4a526b1b5d24ae1ce4
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -365,6 +397,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  geotypes:
+    dependency: transitive
+    description:
+      name: geotypes
+      sha256: "5bedf57de92283133dd221e363812ef50eaaba414f0823b1974ef7d84b86991f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
   get_it:
     dependency: "direct main"
     description:
@@ -429,6 +469,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  image:
+    dependency: transitive
+    description:
+      name: image
+      sha256: "4e973fcf4caae1a4be2fa0a13157aa38a8f9cb049db6529aa00b4d71abc4d928"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.5.4"
   intl:
     dependency: "direct main"
     description:
@@ -469,6 +517,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.11.2"
+  kdbush:
+    dependency: transitive
+    description:
+      name: kdbush
+      sha256: "7dcc5376b1e579804f48428c309d0c9dd0c4c98a9f68db18e17ca1a04561e652"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   leak_tracker:
     dependency: transitive
     description:
@@ -629,6 +685,62 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  permission_handler:
+    dependency: "direct main"
+    description:
+      name: permission_handler
+      sha256: bc917da36261b00137bbc8896bf1482169cd76f866282368948f032c8c1caae1
+      url: "https://pub.dev"
+    source: hosted
+    version: "12.0.1"
+  permission_handler_android:
+    dependency: transitive
+    description:
+      name: permission_handler_android
+      sha256: "1e3bc410ca1bf84662104b100eb126e066cb55791b7451307f9708d4007350e6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "13.0.1"
+  permission_handler_apple:
+    dependency: transitive
+    description:
+      name: permission_handler_apple
+      sha256: f000131e755c54cf4d84a5d8bd6e4149e262cc31c5a8b1d698de1ac85fa41023
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.4.7"
+  permission_handler_html:
+    dependency: transitive
+    description:
+      name: permission_handler_html
+      sha256: "38f000e83355abb3392140f6bc3030660cfaef189e1f87824facb76300b4ff24"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3+5"
+  permission_handler_platform_interface:
+    dependency: transitive
+    description:
+      name: permission_handler_platform_interface
+      sha256: eb99b295153abce5d683cac8c02e22faab63e50679b937fa1bf67d58bb282878
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.3.0"
+  permission_handler_windows:
+    dependency: transitive
+    description:
+      name: permission_handler_windows
+      sha256: "1a790728016f79a41216d88672dbc5df30e686e811ad4e698bfc51f76ad91f1e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
+  petitparser:
+    dependency: transitive
+    description:
+      name: petitparser
+      sha256: "1a97266a94f7350d30ae522c0af07890c70b8e62c71e8e3920d1db4d23c057d1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.0.1"
   platform:
     dependency: transitive
     description:
@@ -653,6 +765,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.1"
+  posix:
+    dependency: transitive
+    description:
+      name: posix
+      sha256: "6323a5b0fa688b6a010df4905a56b00181479e6d10534cecfecede2aa55add61"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.3"
   pretty_dio_logger:
     dependency: "direct main"
     description:
@@ -693,6 +813,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  rbush:
+    dependency: transitive
+    description:
+      name: rbush
+      sha256: "48b683421b4afb43a642f82c6aa31911e54f3069143d31c7d33cbe329df13403"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   retrofit:
     dependency: "direct main"
     description:
@@ -850,6 +978,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  supercluster:
+    dependency: transitive
+    description:
+      name: supercluster
+      sha256: c8cc88d27b43c045b5673e4ffc65b183615c6364bac3dcc42c2d75e1deed9a52
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
+  sweepline_intersections:
+    dependency: transitive
+    description:
+      name: sweepline_intersections
+      sha256: a665c707200a4f07140a4029b41a7c4883beb3f04322cd8e08ebf650f69e1176
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
   term_glyph:
     dependency: transitive
     description:
@@ -866,6 +1010,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.7"
+  turf:
+    dependency: transitive
+    description:
+      name: turf
+      sha256: "75347c45a5c1de805db7cb182286f05a3770e01546626c4dc292709d15cbe436"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.10"
+  turf_equality:
+    dependency: transitive
+    description:
+      name: turf_equality
+      sha256: f0f44ffe389547941358e0d3d4a747db2bd56115b32ff1cede5e5bdf3126a3e2
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  turf_pip:
+    dependency: transitive
+    description:
+      name: turf_pip
+      sha256: ba4fd414baffd5d7b30880658ad6db82461c49ec023f8ffd0c23d398ad8b14be
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
   typed_data:
     dependency: transitive
     description:
@@ -874,6 +1042,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.2"
+  uuid:
+    dependency: transitive
+    description:
+      name: uuid
+      sha256: a11b666489b1954e01d992f3d601b1804a33937b5a8fe677bd26b8a9f96f96e8
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.5.2"
   vector_math:
     dependency: transitive
     description:
@@ -882,6 +1058,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  vietmap_flutter_gl:
+    dependency: "direct dev"
+    description:
+      name: vietmap_flutter_gl
+      sha256: fa25a8001e03e6c0c6d397a922f76013f568e155e8f081c8a9d597fd11a5acc2
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
+  vietmap_flutter_gl_web:
+    dependency: transitive
+    description:
+      name: vietmap_flutter_gl_web
+      sha256: bbd7cd1cadb5a09fdaef46f2d500ee1684973ee69226450b6dfc9b8f0d53a359
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
+  vietmap_gl_platform_interface:
+    dependency: transitive
+    description:
+      name: vietmap_gl_platform_interface
+      sha256: "7a0ab18a386dd6b61bc45b5cb160562cc00e28bc9ae7edf733cef26b4148f913"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   vm_service:
     dependency: transitive
     description:
@@ -930,6 +1130,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  xml:
+    dependency: transitive
+    description:
+      name: xml
+      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.6.1"
   xxh3:
     dependency: transitive
     description:

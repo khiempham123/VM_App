@@ -10,5 +10,6 @@ abstract class AuthRepository {
   Future<AuthInfo?> getAuthInfo();
   Future<AuthInfo> login(LoginRequest request);
   Future<AuthInfo> register(RegisterRequest request);
+  Future<void> changePassword(ChangePasswordRequest request);
   Future<void> logout();
 }

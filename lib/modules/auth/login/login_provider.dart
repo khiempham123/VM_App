@@ -81,8 +81,10 @@ class LoginProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      final onlyError = e.toString().split('\n')[1];
+      debugPrint('error failure: $onlyError');
       _isLoading = false;
-      _errorMessage = e.toString();
+      _errorMessage = onlyError;
       notifyListeners();
     }
   }

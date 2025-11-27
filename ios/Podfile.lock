@@ -5,15 +5,27 @@ PODS:
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - permission_handler_apple (9.3.0):
+    - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - VietMap (2.9.4)
+  - vietmap_flutter_gl (0.0.3):
+    - Flutter
+    - VietMap (~> 2.9.4)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - vietmap_flutter_gl (from `.symlinks/plugins/vietmap_flutter_gl/ios`)
+
+SPEC REPOS:
+  trunk:
+    - VietMap
 
 EXTERNAL SOURCES:
   Flutter:
@@ -22,14 +34,21 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  vietmap_flutter_gl:
+    :path: ".symlinks/plugins/vietmap_flutter_gl/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  VietMap: 12d51550ae540231b40cec59516002213bb46dcc
+  vietmap_flutter_gl: 5a1b5b26b47f2bf7de44b4fcf2125e3c666ac34d
 
 PODFILE CHECKSUM: 4f1c12611da7338d21589c0b2ecd6bd20b109694
 
