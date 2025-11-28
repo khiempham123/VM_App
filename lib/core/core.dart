@@ -4,6 +4,8 @@
 export 'network/auth_request_interceptor.dart';
 export 'network/curl_interceptor.dart';
 export 'network/http_client.dart';
+export 'network/map_client.dart';
+export 'network/map_request_interceptor.dart';
 export 'exception/exception_extension.dart';
 export 'exception/dio_failure.dart';
 export 'exception/error_codes.dart';

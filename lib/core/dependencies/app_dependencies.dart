@@ -42,14 +42,28 @@ class AppDependencies {
       ),
     );
 
+
+    locator.registerLazySingleton<MapClient>(
+          () => MapClient(
+        dio: MapClient.createDio(
+          //localeStr: locator<LocaleHandler>().locale.languageCode,
+        ),  // ← Tạo Dio với VietmapApiKeyInterceptor
+        storage: locator(),
+      ),
+    );
+
     locator.registerLazySingleton(
       () => AuthRequestInterceptor(httpClient: locator(), storage: locator()),
     );
+
 
     //API---------
     registerServices();
 
     registerRepositories();
+
+    metroMapServices();
+    metroMapRepositories();
 
     // Register AppProvider after all dependencies are set up
     locator.registerLazySingleton(() => AppProvider(locator()));

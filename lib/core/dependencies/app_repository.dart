@@ -19,3 +19,16 @@ void registerRepositories() {
     rethrow;
   }
 }
+
+void metroMapServices()
+{
+  locator.registerLazySingleton<MetroMapService>(
+    () => MetroMapService(locator<MapClient>().dio),
+  );
+}
+
+void metroMapRepositories() {
+  locator.registerLazySingleton<MetroMapRepository>(
+    () => MetroMapRepositoryImpl(locator(), locator()),
+  );
+}

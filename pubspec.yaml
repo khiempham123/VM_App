@@ -59,13 +59,15 @@ dependencies:
   # Permission Handler
   permission_handler: ^12.0.1
 
+  vietmap_flutter_gl: ^4.1.0
+  flutter_dotenv: ^6.0.0
 
   # Utilities
   intl: ^0.20.2
   logger: ^2.0.2
   equatable: ^2.0.5
   dartz: ^0.10.1
-
+  flutter_typeahead: ^5.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -82,9 +84,7 @@ dev_dependencies:
   # Code Generation
   freezed: ^3.2.3
   # VietMap
-  vietmap_flutter_gl: ^4.1.0
   # dotenv
-  flutter_dotenv: ^6.0.0
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

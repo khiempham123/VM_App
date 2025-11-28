@@ -1,5 +1,4 @@
 import 'package:vm_first_app/app/app_provider.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:vm_first_app/core/route/router.dart';
 import 'package:vm_first_app/core/core.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:vm_first_app/modules/metro_go/metro_map_provider.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 //Idea: Try using Vietmap Api to get map and finding place near the metro terminal
 //Example: When you go from ThuDuc to BenThanh terminal you can go Ben Thanh Market,...
@@ -44,11 +44,15 @@ class _MetroMapView extends StatelessWidget {
           backgroundColor: AppColors.background,
         ),
       ),
-      body: Stack(
+      body:
+      Stack(
         children: [
+          TypeAheadField(
+
+          ),
           _VietmapWidget(onMapCreated: provider.onMapCreated),
           provider.isOnMyLocation ? UserLocationLayer(
-            mapController: provider.vietmapController!,
+            mapController: provider.vietmapController,
             locationIcon: const Icon(
               Icons.circle,
               color: Colors.blue,
