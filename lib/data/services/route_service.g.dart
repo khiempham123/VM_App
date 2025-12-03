@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'metro_map_service.dart';
+part of 'route_service.dart';
 
 // dart format off
 
@@ -10,8 +10,8 @@ part of 'metro_map_service.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter,avoid_unused_constructor_parameters,unreachable_from_main
 
-class _MetroMapService implements MetroMapService {
-  _MetroMapService(this._dio, {this.baseUrl, this.errorLogger});
+class _RouteService implements RouteService {
+  _RouteService(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
 
@@ -20,29 +20,48 @@ class _MetroMapService implements MetroMapService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<PlaceDtoResponse>> searchPlaces(String text) async {
+  Future<RouteDtoResponse> getRoute(
+    List<String> points,
+    String? vehicle,
+    bool? pointsEncoded,
+    String? optimize,
+    String? avoid,
+    int? capacity,
+    String? time,
+    bool? alternatives,
+    double? heading,
+    String? annotations,
+  ) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'text': text};
+    final queryParameters = <String, dynamic>{
+      r'point': points,
+      r'vehicle': vehicle,
+      r'points_encoded': pointsEncoded,
+      r'optimize': optimize,
+      r'avoid': avoid,
+      r'capacity': capacity,
+      r'time': time,
+      r'alternatives': alternatives,
+      r'heading': heading,
+      r'annotations': annotations,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<PlaceDtoResponse>>(
+    final _options = _setStreamType<RouteDtoResponse>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/api/autocomplete/v4',
+            '/api/route',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<PlaceDtoResponse> _value;
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late RouteDtoResponse _value;
     try {
-      _value = _result.data!
-          .map(
-            (dynamic i) => PlaceDtoResponse.fromJson(i as Map<String, dynamic>),
-          )
-          .toList();
+      _value = RouteDtoResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, _result);
       rethrow;

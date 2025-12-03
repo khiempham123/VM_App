@@ -25,10 +25,18 @@ void metroMapServices()
   locator.registerLazySingleton<MetroMapService>(
     () => MetroMapService(locator<MapClient>().dio),
   );
+
+  locator.registerLazySingleton<RouteService>(
+    () => RouteService(locator<MapClient>().dio),
+  );
 }
 
 void metroMapRepositories() {
   locator.registerLazySingleton<MetroMapRepository>(
-    () => MetroMapRepositoryImpl(locator(), locator()),
+    () => MetroMapRepositoryImpl(locator(), locator(), locator<MapClient>().dio),
+  );
+
+  locator.registerLazySingleton<RouteRepository>(
+    () => RouteRepositoryImpl(locator()),
   );
 }

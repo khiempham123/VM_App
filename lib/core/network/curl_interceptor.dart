@@ -29,7 +29,9 @@ class CurlInterceptor extends Interceptor {
       //ToDo: try refactor AuthDto because the format data respone is difference.
       // My format like { "code": "", "message": "", "userId": ""}
       // But the format from api like { "code": "", "message": "", "data": {"userId": ""}}
-      if(code !='') {
+
+      // Check if code exists and is NOT a success code
+      if(code != '' && code.toUpperCase() != 'OK') {
         debugPrint('Message from api: $message');
         debugPrint('Code from api: $code');
         final error = DioException(
@@ -42,8 +44,20 @@ class CurlInterceptor extends Interceptor {
         handler.reject(error);
         return;
       }
+
+      // If code is OK or empty, check if there's a 'data' field to unwrap
+      if(realData != null && code != '' && code.toUpperCase() == 'OK') {
+        // Unwrap the data field for OK responses that have nested data
+        response.data = realData;
+        debugPrint('Exactly data - unwrapped from OK response');
+      } else if(code == '' && realData != null) {
+        // Original behavior for responses without code field
         response.data = realData;
         debugPrint('Exactly data');
+      } else {
+        // Keep response as-is for OK responses without nested data (like Vietmap Route API)
+        debugPrint('Response with code: $code - keeping original structure');
+      }
 
     }
     return handler.next(response); //continue

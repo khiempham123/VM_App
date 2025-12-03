@@ -107,6 +107,71 @@ class MainRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [MetroGoNavigationScreen]
+class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
+  MetroGoNavigationRoute({
+    Key? key,
+    required LatLng currentLocation,
+    required LatLng selectedLocation,
+    List<PageRouteInfo>? children,
+  }) : super(
+         MetroGoNavigationRoute.name,
+         args: MetroGoNavigationRouteArgs(
+           key: key,
+           currentLocation: currentLocation,
+           selectedLocation: selectedLocation,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'MetroGoNavigationRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<MetroGoNavigationRouteArgs>();
+      return MetroGoNavigationScreen(
+        key: args.key,
+        currentLocation: args.currentLocation,
+        selectedLocation: args.selectedLocation,
+      );
+    },
+  );
+}
+
+class MetroGoNavigationRouteArgs {
+  const MetroGoNavigationRouteArgs({
+    this.key,
+    required this.currentLocation,
+    required this.selectedLocation,
+  });
+
+  final Key? key;
+
+  final LatLng currentLocation;
+
+  final LatLng selectedLocation;
+
+  @override
+  String toString() {
+    return 'MetroGoNavigationRouteArgs{key: $key, currentLocation: $currentLocation, selectedLocation: $selectedLocation}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! MetroGoNavigationRouteArgs) return false;
+    return key == other.key &&
+        currentLocation == other.currentLocation &&
+        selectedLocation == other.selectedLocation;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ currentLocation.hashCode ^ selectedLocation.hashCode;
+}
+
+/// generated route for
 /// [MetroMapScreen]
 class MetroMapRoute extends PageRouteInfo<void> {
   const MetroMapRoute({List<PageRouteInfo>? children})

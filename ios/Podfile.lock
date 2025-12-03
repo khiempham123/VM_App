@@ -1,11 +1,15 @@
 PODS:
   - Flutter (1.0.0)
+  - flutter_keyboard_visibility (0.0.1):
+    - Flutter
   - flutter_secure_storage (6.0.0):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
+    - Flutter
+  - pointer_interceptor_ios (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
@@ -14,41 +18,85 @@ PODS:
   - vietmap_flutter_gl (0.0.3):
     - Flutter
     - VietMap (~> 2.9.4)
+  - vietmap_flutter_navigation (0.0.3):
+    - Flutter
+    - VietMapCoreNavigation (= 3.1.0)
+    - VietMapNavigation (= 3.3.0)
+  - VietMapCoreNavigation (3.1.0):
+    - VietMapDirections.swift (~> 2.0.1)
+    - VietMapTurf (~> 1.0.2)
+  - VietMapDirections.swift (2.0.1):
+    - VietMapPolyline (~> 1.0.4)
+  - VietMapNavigation (3.3.0):
+    - VietMap (~> 2.9.4)
+    - VietMapCoreNavigation (= 3.1.0)
+    - VietMapSolar (~> 1.0.3)
+    - VietMapSpeech (~> 2.0.1)
+  - VietMapPolyline (1.0.6)
+  - VietMapSolar (1.0.3)
+  - VietMapSpeech (2.0.1)
+  - VietMapTurf (1.0.2)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
+  - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - pointer_interceptor_ios (from `.symlinks/plugins/pointer_interceptor_ios/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - vietmap_flutter_gl (from `.symlinks/plugins/vietmap_flutter_gl/ios`)
+  - vietmap_flutter_navigation (from `.symlinks/plugins/vietmap_flutter_navigation/ios`)
 
 SPEC REPOS:
   trunk:
     - VietMap
+    - VietMapCoreNavigation
+    - VietMapDirections.swift
+    - VietMapNavigation
+    - VietMapPolyline
+    - VietMapSolar
+    - VietMapSpeech
+    - VietMapTurf
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
+  flutter_keyboard_visibility:
+    :path: ".symlinks/plugins/flutter_keyboard_visibility/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  pointer_interceptor_ios:
+    :path: ".symlinks/plugins/pointer_interceptor_ios/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   vietmap_flutter_gl:
     :path: ".symlinks/plugins/vietmap_flutter_gl/ios"
+  vietmap_flutter_navigation:
+    :path: ".symlinks/plugins/vietmap_flutter_navigation/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  pointer_interceptor_ios: da06a662d5bfd329602b45b2ab41bc0fb5fdb0f0
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   VietMap: 12d51550ae540231b40cec59516002213bb46dcc
   vietmap_flutter_gl: 5a1b5b26b47f2bf7de44b4fcf2125e3c666ac34d
+  vietmap_flutter_navigation: 2cfa0988a0ab7cd28d6bee8b827be6c318e67f94
+  VietMapCoreNavigation: a5a6e2bed913c321abafca37286647b5b1dc52ed
+  VietMapDirections.swift: d622c98e381281b39f7dcac2b0445ee2f6e1690e
+  VietMapNavigation: dcdbbf438fc0b1d968679db9bf0d7bc913fb39de
+  VietMapPolyline: e599c6d0a0a4b3672957881e2f666ba2141a4e83
+  VietMapSolar: ef412e72efb00b700f2223e701cae66b446bf17b
+  VietMapSpeech: fe5bd0c2ed2757aa7ac59337d74480e25e5a36ed
+  VietMapTurf: 323ba165ae0aeb0fb6622d427e5341c14f4afada
 
 PODFILE CHECKSUM: 4f1c12611da7338d21589c0b2ecd6bd20b109694
 

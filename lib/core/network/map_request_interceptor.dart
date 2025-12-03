@@ -1,10 +1,5 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:vm_first_app/core/core.dart';
 
 class MapRequestInterceptor extends Interceptor {

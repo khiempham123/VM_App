@@ -6,10 +6,11 @@ import 'package:vm_first_app/modules/auth/register/register_screen.dart';
 import 'package:vm_first_app/modules/home/screens/home_screen.dart';
 import 'package:vm_first_app/modules/profile/profile_screen.dart';
 import 'package:vm_first_app/modules/metro_go/metro_map_screen.dart';
+import 'package:vm_first_app/modules/metro_go_navigation/metro_go_navigation_screen.dart';
 import 'package:vm_first_app/modules/auth/change_password/change_password_screen.dart';
 import 'package:vm_first_app/modules/main/main_screen.dart';
 import 'package:flutter/cupertino.dart';
-
+import 'package:vietmap_flutter_navigation/vietmap_flutter_navigation.dart';
 export 'package:auto_route/auto_route.dart';
 
 part 'router.gr.dart';
@@ -55,6 +56,7 @@ final mainRoute = AutoRoute(
       ],
     ),
     AutoRoute(page: ChangePasswordRoute.page),
+    AutoRoute(page: MetroGoNavigationRoute.page),
     // AutoRoute(page: ExportCarRoute.page),
     RedirectRoute(path: '*', redirectTo: ''),
   ],

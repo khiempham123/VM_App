@@ -137,7 +137,7 @@ class PlaceDtoResponse {
 
   factory PlaceDtoResponse.fromJson(Map<String, dynamic> json) => PlaceDtoResponse(
     refId: json['ref_id'] as String?,
-    distance: json['distance'] as double?,
+    distance: (json['distance'] as num?)?.toDouble(),
     address: json['address'] as String?,
     name: json['name'] as String?,
     display: json['display'] as String?,
@@ -194,8 +194,8 @@ class PlaceDetailsDtoResponse {
     district: json['district'] as String?,
     wardId: json['ward_id'] as int?,
     ward: json['ward'] as String?,
-    lat: json['lat'] as double?,
-    lng: json['lng'] as double?,
+    lat: (json['lat'] as num?)?.toDouble(),
+    lng: (json['lng'] as num?)?.toDouble(),
   );
 }
 
@@ -203,7 +203,7 @@ extension PlaceDtoResponseX on PlaceDtoResponse {
   PlaceEntity toEntity() {
     return PlaceEntity(
       refId: refId ?? '',
-      distance: distance ?? 0.0,
+      distance: distance ?? 0,
       address: address ?? '',
       name: name ?? '',
       display: display ?? '',
