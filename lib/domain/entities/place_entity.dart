@@ -20,18 +20,18 @@ class PlaceEntity {
   });
 
   factory PlaceEntity.fromJson(Map<String, dynamic> json) => PlaceEntity(
-    refId: json['refId'],
-    distance: json['distance'],
-    address: json['address'],
-    name: json['name'],
-    display: json['display'],
-    boundaries: (json['boundaries'] as List<dynamic>)
-        .map((item) => BoundaryEntity.fromJson(item as Map<String, dynamic>))
-        .toList(),
-    categories: (json['categories'] as List<dynamic>).map((item) => item as String).toList(),
-    entryPoints: (json['entryPoints'] as List<dynamic>)
-        .map((item) => EntryPointEntity.fromJson(item as Map<String, dynamic>))
-        .toList(),
+    refId: json['ref_id'] ?? '',
+    distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+    address: json['address'] ?? '',
+    name: json['name'] ?? '',
+    display: json['display'] ?? '',
+    boundaries: (json['boundaries'] as List<dynamic>?)
+        ?.map((item) => BoundaryEntity.fromJson(item as Map<String, dynamic>))
+        .toList() ?? [],
+    categories: (json['categories'] as List<dynamic>?)?.map((item) => item as String).toList() ?? [],
+    entryPoints: (json['entry_points'] as List<dynamic>?)
+        ?.map((item) => EntryPointEntity.fromJson(item as Map<String, dynamic>))
+        .toList() ?? [],
   );
 
   Map<String, dynamic> toJson() => {
@@ -62,11 +62,11 @@ class BoundaryEntity {
   });
   
   factory BoundaryEntity.fromJson(Map<String, dynamic> json) => BoundaryEntity(
-    type: json['type'],
-    id: json['id'],
-    name: json['name'],
-    prefix: json['prefix'],
-    fullName: json['fullName'],
+    type: json['type'] ?? 0,
+    id: json['id'] ?? 0,
+    name: json['name'] ?? '',
+    prefix: json['prefix'] ?? '',
+    fullName: json['full_name'] ?? '',
   );
 
   Map<String, dynamic> toJson() => {
@@ -88,8 +88,8 @@ class EntryPointEntity {
   });
 
   factory EntryPointEntity.fromJson(Map<String, dynamic> json) => EntryPointEntity(
-    refId: json['refId'],
-    name: json['name'],
+    refId: json['ref_id'] ?? 0,
+    name: json['name'] ?? '',
   );
 
   Map<String, dynamic> toJson() => {

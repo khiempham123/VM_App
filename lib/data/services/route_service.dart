@@ -1,4 +1,4 @@
-import 'package:vm_first_app/data/dto/route_dto.dart';
+import 'package:vm_first_app/data/data.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
@@ -21,5 +21,11 @@ abstract class RouteService {
     @Query('heading') double? heading,
     @Query('annotations') String? annotations,
   );
+
+  @GET('/api/reverse/v4')
+  Future<List<ReverseDtoResponse>> getReverse(
+      @Query('lng') double lng,
+      @Query('lat') double lat,
+      );
 }
 

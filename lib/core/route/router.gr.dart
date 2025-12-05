@@ -113,6 +113,7 @@ class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
     Key? key,
     required LatLng currentLocation,
     required LatLng selectedLocation,
+    required RouteEntity route,
     List<PageRouteInfo>? children,
   }) : super(
          MetroGoNavigationRoute.name,
@@ -120,6 +121,7 @@ class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
            key: key,
            currentLocation: currentLocation,
            selectedLocation: selectedLocation,
+           route: route,
          ),
          initialChildren: children,
        );
@@ -134,6 +136,7 @@ class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
         key: args.key,
         currentLocation: args.currentLocation,
         selectedLocation: args.selectedLocation,
+        route: args.route,
       );
     },
   );
@@ -144,6 +147,7 @@ class MetroGoNavigationRouteArgs {
     this.key,
     required this.currentLocation,
     required this.selectedLocation,
+    required this.route,
   });
 
   final Key? key;
@@ -152,9 +156,11 @@ class MetroGoNavigationRouteArgs {
 
   final LatLng selectedLocation;
 
+  final RouteEntity route;
+
   @override
   String toString() {
-    return 'MetroGoNavigationRouteArgs{key: $key, currentLocation: $currentLocation, selectedLocation: $selectedLocation}';
+    return 'MetroGoNavigationRouteArgs{key: $key, currentLocation: $currentLocation, selectedLocation: $selectedLocation, route: $route}';
   }
 
   @override
@@ -163,12 +169,16 @@ class MetroGoNavigationRouteArgs {
     if (other is! MetroGoNavigationRouteArgs) return false;
     return key == other.key &&
         currentLocation == other.currentLocation &&
-        selectedLocation == other.selectedLocation;
+        selectedLocation == other.selectedLocation &&
+        route == other.route;
   }
 
   @override
   int get hashCode =>
-      key.hashCode ^ currentLocation.hashCode ^ selectedLocation.hashCode;
+      key.hashCode ^
+      currentLocation.hashCode ^
+      selectedLocation.hashCode ^
+      route.hashCode;
 }
 
 /// generated route for
@@ -183,6 +193,22 @@ class MetroMapRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const MetroMapScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [MyTripRouteScreen]
+class MyTripRouteRoute extends PageRouteInfo<void> {
+  const MyTripRouteRoute({List<PageRouteInfo>? children})
+    : super(MyTripRouteRoute.name, initialChildren: children);
+
+  static const String name = 'MyTripRouteRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const MyTripRouteScreen();
     },
   );
 }

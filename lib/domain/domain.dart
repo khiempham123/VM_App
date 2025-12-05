@@ -7,3 +7,4 @@ export 'entities/place_entity.dart';
 export 'entities/place_request.dart';
 export 'entities/route_entity.dart';
 export 'entities/route_request.dart';
+export 'entities/reverse_entity.dart';

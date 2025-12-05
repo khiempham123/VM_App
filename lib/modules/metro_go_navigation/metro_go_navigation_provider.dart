@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
 import 'package:vietmap_flutter_navigation/vietmap_flutter_navigation.dart';
+import 'package:vm_first_app/domain/domain.dart';
 
 class MetroGoNavigationProvider extends ChangeNotifier {
   // Navigation controller
@@ -16,6 +16,7 @@ class MetroGoNavigationProvider extends ChangeNotifier {
   // Waypoints
   final LatLng currentLocation;
   final LatLng selectedLocation;
+  final RouteEntity route;
   List<LatLng> waypoints = [];
 
   // Route progress
@@ -47,6 +48,7 @@ class MetroGoNavigationProvider extends ChangeNotifier {
   MetroGoNavigationProvider({
     required this.currentLocation,
     required this.selectedLocation,
+    required this.route,
   }) {
     waypoints = [currentLocation, selectedLocation];
     _initializeNavigationOptions();
@@ -138,7 +140,7 @@ class MetroGoNavigationProvider extends ChangeNotifier {
     _routeProgressEvent = event;
 
     // Log progress for debugging
-    debugPrint('${_routeProgressEvent.toString()}');
+    debugPrint('i here: $_routeProgressEvent');
     debugPrint('📍 Distance remaining: ${event.distanceRemaining}m');
     debugPrint('⏱️ Duration remaining: ${event.durationRemaining}s');
 
@@ -171,6 +173,7 @@ class MetroGoNavigationProvider extends ChangeNotifier {
     _navigationController?.finishNavigation();
     _isNavigating = false;
     _routeProgressEvent = null;
+
     notifyListeners();
   }
 

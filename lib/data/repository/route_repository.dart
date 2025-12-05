@@ -1,4 +1,5 @@
 import 'package:vm_first_app/data/dto/route_dto.dart';
+import 'package:vm_first_app/data/dto/reverse_dto.dart';
 import 'package:vm_first_app/data/services/route_service.dart';
 import 'package:vm_first_app/domain/domain.dart';
 
@@ -29,6 +30,22 @@ class RouteRepositoryImpl implements RouteRepository {
       return response.toEntity();
     } catch (e) {
       print('❌ Error getting route: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<ReverseEntity?> getReverse(RoutePointRequest request) async {
+    try {
+      final response = await routeService.getReverse(
+        request.lng,
+        request.lat,
+      );
+
+      return response.first.toEntity();
+
+    } catch (e) {
+      print('❌ Error getting reverse: $e');
       return null;
     }
   }

@@ -23,8 +23,9 @@ class MetroMapProvider extends ChangeNotifier {
   late MapOptions _navigationOption;
   MapOptions get navigationOption => _navigationOption;
 
-  RouteProgressEvent? _routeProgressEvent;
-  RouteProgressEvent? get routeProgressEvent => _routeProgressEvent;
+  RouteEntity? _routeEntity;
+  RouteEntity? get routeEntity => _routeEntity;
+
 
   final searchController = TextEditingController();
 
@@ -134,83 +135,61 @@ class MetroMapProvider extends ChangeNotifier {
     _selectedPlaceLatLng = LatLng(details?.lat ?? 0, details?.lng ?? 0);
     _isOnSelectedLocation = true;
     notifyListeners();
-  }
+    final routeRequest = RouteRequest(
+      points: [
+        RoutePointRequest(
+          lat: _currentPlaceLatLng!.latitude,
+          lng: _currentPlaceLatLng!.longitude,
+        ),
+        RoutePointRequest(
+          lat: _selectedPlaceLatLng!.latitude,
+          lng: _selectedPlaceLatLng!.longitude,
+        ),
+      ],
+      vehicle: 'car',
+      pointsEncoded: true,
 
-  Future<void> onRouteSelected() async {
+    );
+    _routeEntity = await _routeRepository.getRoute(routeRequest);
+        debugPrint('I here ${routeEntity?.paths[0].instructions[0].text}');
+        if (_routeEntity != null && _routeEntity!.paths.isNotEmpty) {
+          final firstPath = _routeEntity!.paths[0];
 
-    _isCalculatingRoute = true;
-    _errorMessage = null;
-    notifyListeners();
+          _routeDistance = firstPath.distance / 1000; // Convert meters to km
+          _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
 
-    try {
-      // Use RouteRepository to calculate route (Clean Architecture)
-      final routeRequest = RouteRequest(
-        points: [
-          RoutePointRequest(
-            lat: _currentPlaceLatLng!.latitude,
-            lng: _currentPlaceLatLng!.longitude,
-          ),
-          RoutePointRequest(
-            lat: _selectedPlaceLatLng!.latitude,
-            lng: _selectedPlaceLatLng!.longitude,
-          ),
-        ],
-        vehicle: 'car',
-        pointsEncoded: true,
+          final String encodedPolyline = _routeEntity!.paths[0].points;
+          debugPrint('Show encoded: ${encodedPolyline}');
+          if (encodedPolyline.isNotEmpty) {
+            latLngListForRoute.clear();
+            latLngList = PolylinePoints.decodePolyline(
+              encodedPolyline,
+            );
+            debugPrint('LatLngList from package is: ${latLngList}');
+            latLngListForRoute = [];
+            for (var latLng in latLngList) {
+              latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
+            }
+            _isOnRoute = true;
+            _isCalculatingRoute = false;
 
-      );
-      final routeEntity = await _routeRepository.getRoute(routeRequest);
-
-      if (routeEntity != null && routeEntity.paths.isNotEmpty) {
-        final firstPath = routeEntity.paths[0];
-
-        _routeDistance = firstPath.distance / 1000; // Convert meters to km
-        _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
-
-        // Get encoded polyline
-        final String encodedPolyline = routeEntity.paths[0].points;
-        debugPrint('Show encoded: ${encodedPolyline}');
-        if (encodedPolyline.isNotEmpty) {
-          //latLngList.clear();
-          latLngListForRoute.clear();
-          // Decode polyline to list of LatLng using VietmapPolylineDecoder
-          latLngList = PolylinePoints.decodePolyline(
-            encodedPolyline,
-          );
-          debugPrint('LatLngList from package is: ${latLngList}');
-          latLngListForRoute = [];
-          for (var latLng in latLngList) {
-            latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
+            Line? lineDrive = await _vietmapController?.addPolyline(PolylineOptions(
+              geometry: latLngListForRoute,
+              polylineColor: Colors.black,
+              polylineWidth: 2.0,
+            ));
+            notifyListeners();
+          } else {
+            _errorMessage = 'No polyline data in route';
+            _isCalculatingRoute = false;
+            notifyListeners();
           }
-          _isOnRoute = true;
-          _isCalculatingRoute = false;
-
-          Line? lineDrive = await _vietmapController?.addPolyline(PolylineOptions(
-            geometry: latLngListForRoute,
-            polylineColor: Colors.black,
-            polylineWidth: 2.0,
-          ));
-          notifyListeners();
         } else {
-          _errorMessage = 'No polyline data in route';
+          _errorMessage = 'No route found';
           _isCalculatingRoute = false;
           notifyListeners();
         }
-      } else {
-        _errorMessage = 'No route found';
-        _isCalculatingRoute = false;
-        notifyListeners();
-      }
-    } catch (e) {
-      _errorMessage = 'Error calculating route: $e';
-      _isCalculatingRoute = false;
-
-      notifyListeners();
-    }
   }
-
-
-
 
   @override
   void dispose() {

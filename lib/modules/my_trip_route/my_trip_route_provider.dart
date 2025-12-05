@@ -1,0 +1,632 @@
+import 'dart:math' as math;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:vm_first_app/app/app_provider.dart';
+import 'package:vm_first_app/domain/domain.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
+import 'package:vm_first_app/core/core.dart';
+import 'package:vietmap_flutter_plugin/vietmap_flutter_plugin.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+
+class MyTripRouteProvider extends ChangeNotifier {
+  // Kept for future use
+  // ignore: unused_field
+  final AppProvider appProvider;
+
+  // VietmapGL controller
+  VietmapController? _vietmapController;
+  VietmapController get vietmapController => _vietmapController!;
+  bool get isMapReady => _vietmapController != null;
+
+  final searchController = TextEditingController();
+
+  late final MetroMapRepository _metroMapRepository;
+  late final RouteRepository _routeRepository;
+
+  // 14 nhà ga metro với tọa độ (theo thứ tự từ Bến Thành đến Suối Tiên)
+  final List<LatLng> metroStations = const [
+    LatLng(10.770215179294059, 106.69689029348139), // 1. Bến Thành
+    LatLng(10.776229, 106.703003),                   // 2. Nhà hát TP
+    LatLng(10.781322149729117, 106.70773289741469), // 3. Ba Son
+    LatLng(10.796577, 106.716293),                   // 4. Văn Thánh
+    LatLng(10.798878, 106.722768),                   // 5. Tân Cảng
+    LatLng(10.800463, 106.733723),                   // 6. Thảo Điền
+    LatLng(10.801830530540999, 106.7416294022247),  // 7. An Phú
+    LatLng(10.808485, 106.755103),                   // 8. Rạch Chiếc
+    LatLng(10.822636, 106.759832),                   // 9. Phước Long
+    LatLng(10.832322, 106.763676),                   // 10. Bình Thái
+    LatLng(10.846283, 106.773891),                   // 11. Thủ Đức
+    LatLng(10.856754, 106.785423),                   // 12. Khu Công Nghệ Cao
+    LatLng(10.871523, 106.799856),                   // 13. Đại học Quốc Gia
+    LatLng(10.879234, 106.812678),                   // 14. Suối Tiên
+  ];
+
+  // Tên các nhà ga metro (theo thứ tự tương ứng)
+  final List<String> metroStationNames = const [
+    'Bến Thành',
+    'Nhà hát TP',
+    'Ba Son',
+    'Văn Thánh',
+    'Tân Cảng',
+    'Thảo Điền',
+    'An Phú',
+    'Rạch Chiếc',
+    'Phước Long',
+    'Bình Thái',
+    'Thủ Đức',
+    'Khu Công Nghệ Cao',
+    'Đại học Quốc Gia',
+    'Suối Tiên',
+  ];
+
+  PlaceDetailEntity? _selectedPlace;
+  PlaceDetailEntity? get selectedPlace => _selectedPlace;
+
+  LatLng? _currentPlaceLatLng;
+  LatLng? get currentPlaceLatLng => _currentPlaceLatLng;
+
+  LatLng? _selectedPlaceLatLng;
+  LatLng? get selectedPlaceLatLng => _selectedPlaceLatLng;
+
+  LatLng? _longPressedLocation;
+  LatLng? get longPressedLocation => _longPressedLocation;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  bool _isOnMyLocation = false;
+  bool get isOnMyLocation => _isOnMyLocation;
+
+  bool _isOnSelectedLocation = false;
+  bool get isOnSelectedLocation => _isOnSelectedLocation;
+
+  bool _isOnLongPressedLocation = false;
+  bool get isOnLongPressedLocation => _isOnLongPressedLocation;
+
+  bool _isMetroRouteDrawn = false;
+  bool get isMetroRouteDrawn => _isMetroRouteDrawn;
+
+  bool _isReverseDrawn = false;
+  bool get isReverseDrawn => _isReverseDrawn;
+
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  // Metro route line
+  Line? _metroRouteLine;
+  Line? get metroRouteLine => _metroRouteLine;
+
+  // Station markers
+  List<Symbol> _stationMarkers = [];
+  List<Symbol> get stationMarkers => _stationMarkers;
+
+  // Nearest metro station properties
+  int? _nearestStationIndex;
+  int? get nearestStationIndex => _nearestStationIndex;
+  String? get nearestStationName => _nearestStationIndex != null
+      ? metroStationNames[_nearestStationIndex!]
+      : null;
+  LatLng? get nearestStationLatLng => _nearestStationIndex != null
+      ? metroStations[_nearestStationIndex!]
+      : null;
+  double? _distanceToNearestStation;
+  double? get distanceToNearestStation => _distanceToNearestStation;
+
+  // Route to nearest station
+  RouteEntity? _routeToNearestStation;
+  RouteEntity? get routeToNearestStation => _routeToNearestStation;
+  
+  RouteEntity? _routeToLongPressedLocation;
+  RouteEntity? get routeToLongPressedLocation => _routeToLongPressedLocation;
+
+  ReverseEntity? _reverseEntity;
+  ReverseEntity? get reverseEntity => _reverseEntity;
+  
+  // All long pressed locations - list of all locations user has clicked
+  final List<LatLng> _allLongPressedLocations = [];
+  List<LatLng> get allLongPressedLocations => _allLongPressedLocations;
+  
+  final List<ReverseEntity> _allLongPressedEntities = [];
+  List<ReverseEntity> get allLongPressedEntities => _allLongPressedEntities;
+  
+  // Trip waypoints - list of locations added to trip
+  final List<LatLng> _tripWaypoints = [];
+  List<LatLng> get tripWaypoints => _tripWaypoints;
+
+  final List<ReverseEntity> _tripWaypointEntities = [];
+  List<ReverseEntity> get tripWaypointEntities => _tripWaypointEntities;
+
+  Line? _routeToStationLine;
+  Line? get routeToStationLine => _routeToStationLine;
+  bool _isRouteToStationDrawn = false;
+  bool get isRouteToStationDrawn => _isRouteToStationDrawn;
+  double? _routeDistance;
+  double? get routeDistance => _routeDistance;
+  double? _routeDuration;
+  double? get routeDuration => _routeDuration;
+
+  // Selected metro station
+  int? _selectedMetroStationIndex;
+  int? get selectedMetroStationIndex => _selectedMetroStationIndex;
+  String? get selectedMetroStationName => _selectedMetroStationIndex != null
+      ? metroStationNames[_selectedMetroStationIndex!]
+      : null;
+  LatLng? get selectedMetroStationLatLng => _selectedMetroStationIndex != null
+      ? metroStations[_selectedMetroStationIndex!]
+      : null;
+
+  MyTripRouteProvider(this.appProvider) {
+    Vietmap.getInstance('${dotenv.env['VM_API_KEY']}');
+    _metroMapRepository = locator<MetroMapRepository>();
+    _routeRepository = locator<RouteRepository>();
+  }
+
+  void onMapCreated(VietmapController controller) {
+    _vietmapController = controller;
+    notifyListeners();
+    // Draw metro route when map is created
+    _drawMetroRoute();
+  }
+
+  Future<void> _drawMetroRoute() async {
+    if (_vietmapController == null || metroStations.isEmpty) return;
+
+    try {
+      // Vẽ polyline đi qua các nhà ga metro
+      _metroRouteLine = await _vietmapController?.addPolyline(
+        PolylineOptions(
+          geometry: metroStations,
+          polylineColor: Colors.blue,
+          polylineWidth: 4.0,
+        ),
+      );
+
+      // Markers được hiển thị qua StaticMarkerLayer trong screen
+      // không cần thêm marker thủ công ở đây
+
+      _isMetroRouteDrawn = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error drawing metro route: $e');
+    }
+  }
+
+  Future<void> moveToMyLocation() async {
+    if (_vietmapController == null) return;
+
+    try {
+      _currentPlaceLatLng = await _vietmapController!.requestMyLocationLatLng();
+      await _vietmapController!.moveCamera(
+        CameraUpdate.newLatLngZoom(
+          _currentPlaceLatLng ?? const LatLng(10.770215179294059, 106.69689029348139),
+          14.0,
+        ),
+      );
+      _isOnMyLocation = true;
+
+      // Find nearest metro station when moving to my location
+      if (_currentPlaceLatLng != null) {
+        _findNearestMetroStation(_currentPlaceLatLng!);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error getting my location: $e');
+    }
+  }
+
+  /// Calculate distance between two LatLng points using Haversine formula
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371; // Earth's radius in kilometers
+
+    final double lat1 = point1.latitude * math.pi / 180;
+    final double lat2 = point2.latitude * math.pi / 180;
+    final double dLat = (point2.latitude - point1.latitude) * math.pi / 180;
+    final double dLng = (point2.longitude - point1.longitude) * math.pi / 180;
+
+    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) * math.cos(lat2) *
+        math.sin(dLng / 2) * math.sin(dLng / 2);
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+
+    return earthRadius * c; // Distance in kilometers
+  }
+
+  /// Find the nearest metro station from a given location
+  void _findNearestMetroStation(LatLng userLocation) {
+    double minDistance = double.infinity;
+    int nearestIndex = 0;
+
+    for (int i = 0; i < metroStations.length; i++) {
+      final distance = _calculateDistance(userLocation, metroStations[i]);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestIndex = i;
+      }
+    }
+
+    _nearestStationIndex = nearestIndex;
+    _distanceToNearestStation = minDistance;
+    debugPrint('Nearest station: ${metroStationNames[nearestIndex]} - Distance: ${minDistance.toStringAsFixed(2)} km');
+  }
+
+  /// Draw route from current location to the nearest metro station
+  Future<void> drawRouteToNearestStation() async {
+    if (_vietmapController == null ||
+        _currentPlaceLatLng == null ||
+        _nearestStationIndex == null) {
+      debugPrint('Cannot draw route: missing required data');
+      return;
+    }
+
+    try {
+      // Clear existing route line if any
+      if (_routeToStationLine != null) {
+        await _vietmapController!.removePolyline(_routeToStationLine!);
+        _routeToStationLine = null;
+      }
+
+      final targetStation = metroStations[_nearestStationIndex!];
+
+      final routeRequest = RouteRequest(
+        points: [
+          RoutePointRequest(
+            lat: _currentPlaceLatLng!.latitude,
+            lng: _currentPlaceLatLng!.longitude,
+          ),
+          RoutePointRequest(
+            lat: targetStation.latitude,
+            lng: targetStation.longitude,
+          ),
+        ],
+        vehicle: 'car',
+        pointsEncoded: true,
+      );
+
+      _routeToNearestStation = await _routeRepository.getRoute(routeRequest);
+
+      if (_routeToNearestStation != null && _routeToNearestStation!.paths.isNotEmpty) {
+        final firstPath = _routeToNearestStation!.paths[0];
+
+        _routeDistance = firstPath.distance / 1000; // Convert meters to km
+        _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
+
+        final String encodedPolyline = firstPath.points;
+
+        if (encodedPolyline.isNotEmpty) {
+          final decodedPoints = PolylinePoints.decodePolyline(encodedPolyline);
+          final List<LatLng> routePoints = decodedPoints
+              .map((point) => LatLng(point.latitude, point.longitude))
+              .toList();
+
+          _routeToStationLine = await _vietmapController!.addPolyline(
+            PolylineOptions(
+              geometry: routePoints,
+              polylineColor: Colors.green,
+              polylineWidth: 4.0,
+            ),
+          );
+
+          _isRouteToStationDrawn = true;
+
+          // Adjust camera to show both user location and station
+          _showRouteBounds();
+
+          notifyListeners();
+          debugPrint('Route drawn: ${_routeDistance?.toStringAsFixed(2)} km, ${_routeDuration?.toStringAsFixed(0)} minutes');
+        }
+      } else {
+        debugPrint('No route found to station');
+      }
+    } catch (e) {
+      debugPrint('Error drawing route to station: $e');
+    }
+  }
+
+  /// Adjust camera to show the route bounds
+  Future<void> _showRouteBounds() async {
+    if (_currentPlaceLatLng == null || _nearestStationIndex == null) return;
+
+    final targetStation = metroStations[_nearestStationIndex!];
+
+    final minLat = math.min(_currentPlaceLatLng!.latitude, targetStation.latitude);
+    final maxLat = math.max(_currentPlaceLatLng!.latitude, targetStation.latitude);
+    final minLng = math.min(_currentPlaceLatLng!.longitude, targetStation.longitude);
+    final maxLng = math.max(_currentPlaceLatLng!.longitude, targetStation.longitude);
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+
+    await _vietmapController?.moveCamera(
+      CameraUpdate.newLatLngBounds(bounds, left: 50, right: 50, top: 150, bottom: 150),
+    );
+  }
+
+  /// Clear the route to station
+  Future<void> clearRouteToStation() async {
+    if (_routeToStationLine != null && _vietmapController != null) {
+      await _vietmapController!.removePolyline(_routeToStationLine!);
+      _routeToStationLine = null;
+    }
+    _routeToNearestStation = null;
+    _isRouteToStationDrawn = false;
+    _routeDistance = null;
+    _routeDuration = null;
+    notifyListeners();
+  }
+
+  Future<List<PlaceEntity>> onSearchChanged(String query) async {
+    final request = PlaceRequest(text: query);
+    if (query.isNotEmpty) {
+      final suggestions = await _metroMapRepository.searchPlaces(request);
+      return suggestions;
+    }
+    return [];
+  }
+
+  Future<void> onSuggestionSelected(PlaceEntity place) async {
+    final request = PlaceDetailsRequest(refid: place.refId);
+    final details = await _metroMapRepository.getPlaceDetails(request);
+
+    if (details != null) {
+      _selectedPlace = details;
+      _selectedPlaceLatLng = LatLng(details.lat, details.lng);
+      _isOnSelectedLocation = true;
+
+      await _vietmapController!.moveCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(details.lat, details.lng),
+          16.0,
+        ),
+      );
+      notifyListeners();
+    } else {
+      debugPrint('Failed to get place details for refId: ${place.refId}');
+    }
+  }
+
+  Future<void> onMapLongClick(LatLng latLng) async {
+    _longPressedLocation = latLng;
+    _isOnLongPressedLocation = true;
+
+    _reverseEntity = await _routeRepository.getReverse(RoutePointRequest(lng: latLng.longitude, lat: latLng.latitude));
+    
+    // Add to all long pressed locations list (không ghi đè, chỉ thêm mới)
+    if (_reverseEntity != null) {
+      _allLongPressedLocations.add(latLng);
+      _allLongPressedEntities.add(_reverseEntity!);
+    }
+    
+    // Move camera to long pressed location
+    _isReverseDrawn = true;
+    _vietmapController?.moveCamera(
+      CameraUpdate.newLatLngZoom(latLng, 16.0),
+    );
+    notifyListeners();
+  }
+
+  /// Get route from current location to long pressed location
+  Future<void> getRouteToLongPressedLocation() async {
+    if (_longPressedLocation == null) return;
+
+    // Get current location if not available
+    _currentPlaceLatLng ??= await _vietmapController?.requestMyLocationLatLng();
+
+    if (_currentPlaceLatLng == null) return;
+
+    try {
+      final request = RouteRequest(
+        points: [
+          RoutePointRequest(
+            lat: _currentPlaceLatLng!.latitude,
+            lng: _currentPlaceLatLng!.longitude,
+          ),
+          RoutePointRequest(
+            lat: _longPressedLocation!.latitude,
+            lng: _longPressedLocation!.longitude,
+          ),
+        ],
+        vehicle: 'car',
+      );
+
+      _routeToLongPressedLocation = await _routeRepository.getRoute(request);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error getting route to long pressed location: $e');
+    }
+  }
+
+  /// Clear only the current long pressed location (last one)
+  void clearLongPressedLocation() {
+    if (_allLongPressedLocations.isNotEmpty) {
+      _allLongPressedLocations.removeLast();
+      _allLongPressedEntities.removeLast();
+    }
+    
+    // Update current to previous one if exists
+    if (_allLongPressedLocations.isNotEmpty) {
+      _longPressedLocation = _allLongPressedLocations.last;
+      _reverseEntity = _allLongPressedEntities.last;
+      _isOnLongPressedLocation = true;
+      _isReverseDrawn = true;
+    } else {
+      _longPressedLocation = null;
+      _reverseEntity = null;
+      _isOnLongPressedLocation = false;
+      _isReverseDrawn = false;
+    }
+    notifyListeners();
+  }
+  
+  /// Clear all long pressed locations
+  void clearAllLongPressedLocations() {
+    _allLongPressedLocations.clear();
+    _allLongPressedEntities.clear();
+    _longPressedLocation = null;
+    _reverseEntity = null;
+    _isOnLongPressedLocation = false;
+    _isReverseDrawn = false;
+    notifyListeners();
+  }
+
+  /// Select a marker at specific index from allLongPressedLocations
+  void selectMarkerAtIndex(int index) {
+    if (index >= 0 && index < _allLongPressedLocations.length) {
+      _longPressedLocation = _allLongPressedLocations[index];
+      _reverseEntity = _allLongPressedEntities[index];
+      _isOnLongPressedLocation = true;
+      _isReverseDrawn = true;
+
+      // Move camera to selected location
+      _vietmapController?.moveCamera(
+        CameraUpdate.newLatLngZoom(_longPressedLocation!, 16.0),
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Select a metro station at specific index
+  void selectMetroStation(int index) {
+    if (index >= 0 && index < metroStations.length) {
+      _selectedMetroStationIndex = index;
+
+      // Move camera to selected metro station
+      _vietmapController?.moveCamera(
+        CameraUpdate.newLatLngZoom(metroStations[index], 16.0),
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Clear selected metro station
+  void clearSelectedMetroStation() {
+    _selectedMetroStationIndex = null;
+    notifyListeners();
+  }
+
+  /// Get route from current location to selected metro station
+  Future<void> getRouteToSelectedMetroStation() async {
+    if (_selectedMetroStationIndex == null) return;
+
+    // Get current location if not available
+    _currentPlaceLatLng ??= await _vietmapController?.requestMyLocationLatLng();
+
+    if (_currentPlaceLatLng == null) return;
+
+    final targetStation = metroStations[_selectedMetroStationIndex!];
+
+    try {
+      final request = RouteRequest(
+        points: [
+          RoutePointRequest(
+            lat: _currentPlaceLatLng!.latitude,
+            lng: _currentPlaceLatLng!.longitude,
+          ),
+          RoutePointRequest(
+            lat: targetStation.latitude,
+            lng: targetStation.longitude,
+          ),
+        ],
+        vehicle: 'car',
+      );
+
+      _routeToLongPressedLocation = await _routeRepository.getRoute(request);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error getting route to metro station: $e');
+    }
+  }
+
+  /// Add current long pressed location to trip waypoints
+  void addToTrip() {
+    if (_longPressedLocation != null && _reverseEntity != null) {
+      // Check if location already exists in trip
+      if (!isLocationInTrip(_longPressedLocation!)) {
+        _tripWaypoints.add(_longPressedLocation!);
+        _tripWaypointEntities.add(_reverseEntity!);
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Remove current long pressed location from trip waypoints
+  void removeFromTrip() {
+    if (_longPressedLocation != null) {
+      final index = _tripWaypoints.indexWhere(
+        (waypoint) =>
+            waypoint.latitude == _longPressedLocation!.latitude &&
+            waypoint.longitude == _longPressedLocation!.longitude,
+      );
+      if (index != -1) {
+        _tripWaypoints.removeAt(index);
+        _tripWaypointEntities.removeAt(index);
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Check if a location is already in trip
+  bool isLocationInTrip(LatLng location) {
+    return _tripWaypoints.any(
+      (waypoint) =>
+          waypoint.latitude == location.latitude &&
+          waypoint.longitude == location.longitude,
+    );
+  }
+
+  /// Clear all trip waypoints
+  void clearAllTrip() {
+    _tripWaypoints.clear();
+    _tripWaypointEntities.clear();
+    notifyListeners();
+  }
+
+  void clearSelectedLocation() {
+    _selectedPlace = null;
+    _selectedPlaceLatLng = null;
+    _isOnSelectedLocation = false;
+    searchController.clear();
+    notifyListeners();
+  }
+
+  // Move camera to show all metro stations
+  Future<void> showAllMetroStations() async {
+    if (_vietmapController == null || metroStations.isEmpty) return;
+
+    try {
+      // Calculate bounds manually from metro stations
+      double minLat = metroStations.first.latitude;
+      double maxLat = metroStations.first.latitude;
+      double minLng = metroStations.first.longitude;
+      double maxLng = metroStations.first.longitude;
+
+      for (final station in metroStations) {
+        if (station.latitude < minLat) minLat = station.latitude;
+        if (station.latitude > maxLat) maxLat = station.latitude;
+        if (station.longitude < minLng) minLng = station.longitude;
+        if (station.longitude > maxLng) maxLng = station.longitude;
+      }
+
+      final bounds = LatLngBounds(
+        southwest: LatLng(minLat, minLng),
+        northeast: LatLng(maxLat, maxLng),
+      );
+
+      await _vietmapController!.moveCamera(
+        CameraUpdate.newLatLngBounds(bounds, left: 50, right: 50, top: 100, bottom: 100),
+      );
+    } catch (e) {
+      debugPrint('Error showing all metro stations: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+}
+

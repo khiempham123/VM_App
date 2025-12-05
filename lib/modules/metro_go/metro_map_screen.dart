@@ -60,6 +60,7 @@ class _MetroMapViewState extends State<_MetroMapView> {
                     onSelected: (value) {
                       provider.searchController.text = value.display;
                       provider.onSuggestionSelected(value);
+                      //provider.onRouteSelected();
                     },
                     suggestionsCallback: (String search) {
                       return provider.onSearchChanged(search);
@@ -121,30 +122,15 @@ class _MetroMapViewState extends State<_MetroMapView> {
               child: const Icon(Icons.location_pin, color: AppColors.primary,),
             ),
           ),
-          // Simple route drawing button (VietmapGL + Polyline)
           Positioned(
             bottom: 50,
-            right: 0.0,
-            child: FloatingActionButton(
-              mini: true,
-              tooltip: 'Vẽ route đơn giản',
-              onPressed: () {
-                provider.onRouteSelected();
-              },
-              child: const Icon(Icons.assistant_direction, color: AppColors.primary),
-            ),
-          ),
-
-          // Navigation route button (NavigationView with callbacks)
-          Positioned(
-            bottom: 100,
             right: 0.0,
             child: FloatingActionButton(
               mini: true,
               tooltip: 'Starting Navigation',
               onPressed: (provider.currentPlaceLatLng != null &&
                          provider.selectedPlaceLatLng != null)
-                  ? () => context.pushRoute(MetroGoNavigationRoute(currentLocation: provider.currentPlaceLatLng!, selectedLocation: provider.selectedPlaceLatLng!))
+                  ? () => context.pushRoute(MetroGoNavigationRoute(currentLocation: provider.currentPlaceLatLng!, selectedLocation: provider.selectedPlaceLatLng!, route: provider.routeEntity!))
                   : null,
               backgroundColor: (provider.currentPlaceLatLng != null &&
                                 provider.selectedPlaceLatLng != null)
@@ -159,7 +145,25 @@ class _MetroMapViewState extends State<_MetroMapView> {
               ),
             ),
           ),
-
+          Positioned(
+            top: 140,
+            right: 0.0,
+            child: FloatingActionButton(
+              mini: true,
+              tooltip: 'Add new my route',
+              onPressed: () => context.router.push(MyTripRouteRoute()),
+              child: const Icon(Icons.create_outlined, color: AppColors.primary),
+            )
+          ),
+          Positioned(
+            bottom: 10,
+            left: 30,
+            child: FloatingActionButton(
+                mini: true,
+                tooltip: 'My trip routes',
+                onPressed: () => {},
+            ),
+          )
         ],
       ),
     );
