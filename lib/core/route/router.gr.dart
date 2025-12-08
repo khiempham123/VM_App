@@ -112,7 +112,7 @@ class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
   MetroGoNavigationRoute({
     Key? key,
     required LatLng currentLocation,
-    required LatLng selectedLocation,
+    required List<LatLng> listLocations,
     required RouteEntity route,
     List<PageRouteInfo>? children,
   }) : super(
@@ -120,7 +120,7 @@ class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
          args: MetroGoNavigationRouteArgs(
            key: key,
            currentLocation: currentLocation,
-           selectedLocation: selectedLocation,
+           listLocations: listLocations,
            route: route,
          ),
          initialChildren: children,
@@ -135,7 +135,7 @@ class MetroGoNavigationRoute extends PageRouteInfo<MetroGoNavigationRouteArgs> {
       return MetroGoNavigationScreen(
         key: args.key,
         currentLocation: args.currentLocation,
-        selectedLocation: args.selectedLocation,
+        listLocations: args.listLocations,
         route: args.route,
       );
     },
@@ -146,7 +146,7 @@ class MetroGoNavigationRouteArgs {
   const MetroGoNavigationRouteArgs({
     this.key,
     required this.currentLocation,
-    required this.selectedLocation,
+    required this.listLocations,
     required this.route,
   });
 
@@ -154,13 +154,13 @@ class MetroGoNavigationRouteArgs {
 
   final LatLng currentLocation;
 
-  final LatLng selectedLocation;
+  final List<LatLng> listLocations;
 
   final RouteEntity route;
 
   @override
   String toString() {
-    return 'MetroGoNavigationRouteArgs{key: $key, currentLocation: $currentLocation, selectedLocation: $selectedLocation, route: $route}';
+    return 'MetroGoNavigationRouteArgs{key: $key, currentLocation: $currentLocation, listLocations: $listLocations, route: $route}';
   }
 
   @override
@@ -169,7 +169,10 @@ class MetroGoNavigationRouteArgs {
     if (other is! MetroGoNavigationRouteArgs) return false;
     return key == other.key &&
         currentLocation == other.currentLocation &&
-        selectedLocation == other.selectedLocation &&
+        const ListEquality<LatLng>().equals(
+          listLocations,
+          other.listLocations,
+        ) &&
         route == other.route;
   }
 
@@ -177,7 +180,7 @@ class MetroGoNavigationRouteArgs {
   int get hashCode =>
       key.hashCode ^
       currentLocation.hashCode ^
-      selectedLocation.hashCode ^
+      const ListEquality<LatLng>().hash(listLocations) ^
       route.hashCode;
 }
 

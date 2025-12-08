@@ -8,6 +8,10 @@ class MetroGoNavigationProvider extends ChangeNotifier {
   MapNavigationViewController? _navigationController;
   MapNavigationViewController? get navigationController => _navigationController;
 
+  // Waypoint markers
+  List<NavigationMarker> _waypointMarkers = [];
+  List<NavigationMarker> get waypointMarkers => _waypointMarkers;
+
   // Navigation plugin and options
   final _vietmapNavigationPlugin = VietMapNavigationPlugin();
   late MapOptions _navigationOption;
@@ -15,8 +19,15 @@ class MetroGoNavigationProvider extends ChangeNotifier {
 
   // Waypoints
   final LatLng currentLocation;
-  final LatLng selectedLocation;
+  final List<LatLng> listLocations;
   final RouteEntity route;
+
+  // Get first destination from list (for backward compatibility)
+  LatLng? get selectedLocation => listLocations.isNotEmpty ? listLocations.first : null;
+
+  // Get last destination
+  LatLng? get destinationLocation => listLocations.isNotEmpty ? listLocations.last : null;
+
   List<LatLng> waypoints = [];
 
   // Route progress
@@ -44,13 +55,41 @@ class MetroGoNavigationProvider extends ChangeNotifier {
   bool _pendingNavigationRoute = false;
   bool get hasPendingNavigationRoute => _pendingNavigationRoute;
 
+  // Multi-waypoint navigation tracking
+  int _currentWaypointIndex = 0;
+  int get currentWaypointIndex => _currentWaypointIndex;
+
+  // Get current target waypoint (the one we're navigating to)
+  LatLng? get currentTargetWaypoint =>
+      _currentWaypointIndex < listLocations.length
+          ? listLocations[_currentWaypointIndex]
+          : null;
+
+  // Get next waypoint after current target
+  LatLng? get nextWaypoint =>
+      (_currentWaypointIndex + 1) < listLocations.length
+          ? listLocations[_currentWaypointIndex + 1]
+          : null;
+
+  // Check if there are more waypoints after current
+  bool get hasMoreWaypoints => (_currentWaypointIndex + 1) < listLocations.length;
+
+  // Get total number of waypoints (excluding start)
+  int get totalWaypoints => listLocations.length;
+
+  // Get remaining waypoints count
+  int get remainingWaypoints => listLocations.length - _currentWaypointIndex;
+
+  // Check if at final destination
+  bool get isAtFinalDestination => _currentWaypointIndex >= listLocations.length - 1;
+
   // Constructor
   MetroGoNavigationProvider({
     required this.currentLocation,
-    required this.selectedLocation,
+    required this.listLocations,
     required this.route,
   }) {
-    waypoints = [currentLocation, selectedLocation];
+    waypoints = [currentLocation, ...listLocations];
     _initializeNavigationOptions();
   }
 
@@ -72,8 +111,17 @@ class MetroGoNavigationProvider extends ChangeNotifier {
     _vietmapNavigationPlugin.setDefaultOptions(_navigationOption);
 
     debugPrint('✅ Navigation options initialized');
-    debugPrint('From: ${currentLocation.latitude}, ${currentLocation.longitude}');
-    debugPrint('To: ${selectedLocation.latitude}, ${selectedLocation.longitude}');
+    debugPrint('📍 From: ${currentLocation.latitude}, ${currentLocation.longitude}');
+    debugPrint('🎯 Total destinations: ${listLocations.length}');
+
+    // Log all waypoints
+    for (int i = 0; i < listLocations.length; i++) {
+      final location = listLocations[i];
+      final label = i == listLocations.length - 1 ? 'Final destination' : 'Waypoint ${i + 1}';
+      debugPrint('  $label: ${location.latitude}, ${location.longitude}');
+    }
+
+    debugPrint('📊 Total navigation waypoints: ${waypoints.length}');
   }
 
   /// Called when NavigationView controller is created
@@ -125,7 +173,59 @@ class MetroGoNavigationProvider extends ChangeNotifier {
     _isRouteBuilt = true;
     debugPrint('✅ Navigation route built successfully');
     debugPrint('Route geometry: ${route.geometry}');
+
+    // Add waypoint markers after route is built
+    _addWaypointMarkers();
+
     notifyListeners();
+  }
+
+  /// Add markers for all waypoints on the map
+  Future<void> _addWaypointMarkers() async {
+    if (_navigationController == null || listLocations.isEmpty) return;
+
+    try {
+      // Clear existing markers first
+      await _navigationController?.removeAllMarkers();
+
+      // Create markers for each waypoint
+      _waypointMarkers = [];
+      debugPrint('i here: ${listLocations.length}');
+      debugPrint('destination: $destinationLocation');
+      for (int i = 0; i < listLocations.length; i++) {
+        final location = listLocations[i];
+          final marker = NavigationMarker(
+            imagePath: 'assets/icons/placeholder.png',
+            latLng: location,
+            title: 'Điểm ${i + 1}',
+            snippet: 'Điểm dừng ${i + 1}/${listLocations.length}',
+            width: 20,
+            height: 20,
+          );
+
+          _waypointMarkers.add(marker);
+      }
+      // Add markers to map
+      if (_waypointMarkers.isNotEmpty) {
+        await _navigationController?.addImageMarkers(_waypointMarkers);
+        debugPrint('✅ Added ${_waypointMarkers.length} waypoint markers');
+      }
+    } catch (e) {
+      debugPrint('❌ Error adding waypoint markers: $e');
+    }
+  }
+
+  /// Remove all waypoint markers
+  Future<void> _removeWaypointMarkers() async {
+    if (_navigationController == null) return;
+
+    try {
+      await _navigationController?.removeAllMarkers();
+      _waypointMarkers.clear();
+      debugPrint('🗑️ Removed all waypoint markers');
+    } catch (e) {
+      debugPrint('❌ Error removing waypoint markers: $e');
+    }
   }
 
   /// Called when route build failed
@@ -140,17 +240,85 @@ class MetroGoNavigationProvider extends ChangeNotifier {
     _routeProgressEvent = event;
 
     // Log progress for debugging
-    debugPrint('i here: $_routeProgressEvent');
+    debugPrint('📍 Current waypoint: ${_currentWaypointIndex + 1}/$totalWaypoints');
     debugPrint('📍 Distance remaining: ${event.distanceRemaining}m');
     debugPrint('⏱️ Duration remaining: ${event.durationRemaining}s');
 
     notifyListeners();
   }
 
-  /// Called when arrived at destination
+  /// Called when arrived at a waypoint (intermediate or final)
   void onArrival() {
-    _isNavigating = false;
-    debugPrint('🎯 Arrived at destination!');
+    debugPrint('🎯 Arrived at waypoint ${_currentWaypointIndex + 1}/$totalWaypoints');
+
+    if (hasMoreWaypoints) {
+      // Arrived at intermediate waypoint, move to next
+      _currentWaypointIndex++;
+      debugPrint('➡️ Moving to next waypoint: ${_currentWaypointIndex + 1}/$totalWaypoints');
+      notifyListeners();
+    } else {
+      // Arrived at final destination
+      _isNavigating = false;
+      debugPrint('🏁 Arrived at FINAL destination!');
+      notifyListeners();
+    }
+  }
+
+  /// Called when arrived at intermediate waypoint - continue to next
+  void onWaypointArrival(int waypointIndex) {
+    debugPrint('📍 Arrived at waypoint $waypointIndex');
+
+    if (waypointIndex < listLocations.length - 1) {
+      _currentWaypointIndex = waypointIndex + 1;
+      debugPrint('➡️ Continuing to waypoint ${_currentWaypointIndex + 1}');
+      notifyListeners();
+    }
+  }
+
+  /// Skip to next waypoint manually
+  void skipToNextWaypoint() {
+    if (hasMoreWaypoints) {
+      _currentWaypointIndex++;
+      debugPrint('⏭️ Skipped to waypoint ${_currentWaypointIndex + 1}/$totalWaypoints');
+
+      // Rebuild route from current location to remaining waypoints
+      _rebuildRouteFromCurrentPosition();
+      notifyListeners();
+    }
+  }
+
+  /// Rebuild route from current position to remaining waypoints
+  Future<void> _rebuildRouteFromCurrentPosition() async {
+    if (_navigationController == null) return;
+
+    try {
+      // Get remaining waypoints including current target
+      final remainingWaypointsList = listLocations.sublist(_currentWaypointIndex);
+
+      // Build new waypoints list: current position + remaining destinations
+      final newWaypoints = [currentLocation, ...remainingWaypointsList];
+
+      debugPrint('🔄 Rebuilding route with ${newWaypoints.length} waypoints');
+
+      await _navigationController?.buildRoute(
+        waypoints: newWaypoints,
+        profile: DrivingProfile.drivingTraffic,
+      );
+    } catch (e) {
+      debugPrint('❌ Error rebuilding route: $e');
+    }
+  }
+
+  /// Get waypoint info by index
+  String getWaypointLabel(int index) {
+    if (index == 0) return 'Điểm xuất phát';
+    if (index == listLocations.length) return 'Điểm đến cuối';
+    return 'Điểm dừng $index';
+  }
+
+  /// Reset waypoint tracking (for restart navigation)
+  void resetWaypointTracking() {
+    _currentWaypointIndex = 0;
     notifyListeners();
   }
 
@@ -161,10 +329,15 @@ class MetroGoNavigationProvider extends ChangeNotifier {
       return;
     }
 
+    // Reset waypoint tracking when starting navigation
+    _currentWaypointIndex = 0;
+
     _navigationController?.startNavigation();
 
     _isNavigating = true;
     debugPrint('▶️ Navigation started');
+    debugPrint('🎯 Navigating through ${listLocations.length} waypoints');
+    debugPrint('➡️ First target: waypoint 1/${listLocations.length}');
     notifyListeners();
   }
 
@@ -173,6 +346,7 @@ class MetroGoNavigationProvider extends ChangeNotifier {
     _navigationController?.finishNavigation();
     _isNavigating = false;
     _routeProgressEvent = null;
+    _currentWaypointIndex = 0; // Reset waypoint index
 
     notifyListeners();
   }
@@ -180,7 +354,9 @@ class MetroGoNavigationProvider extends ChangeNotifier {
   /// Clear route
   void clearRoute() {
     _navigationController?.clearRoute();
+    _removeWaypointMarkers(); // Also remove markers
     _isRouteBuilt = false;
+    _currentWaypointIndex = 0; // Reset waypoint index
     debugPrint('🗑️ Route cleared');
     notifyListeners();
   }

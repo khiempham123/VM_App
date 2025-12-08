@@ -37,6 +37,6 @@ void metroMapRepositories() {
   );
 
   locator.registerLazySingleton<RouteRepository>(
-    () => RouteRepositoryImpl(locator()),
+    () => RouteRepositoryImpl(locator(), locator()),
   );
 }

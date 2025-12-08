@@ -38,5 +38,7 @@ class ValidationHelper {
   static bool hasMaxLength(String value, int maxLength) {
     return value.length <= maxLength;
   }
+
+
 }
 

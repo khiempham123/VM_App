@@ -40,6 +40,9 @@ class MetroMapProvider extends ChangeNotifier {
   LatLng? _selectedPlaceLatLng;
   LatLng? get selectedPlaceLatLng => _selectedPlaceLatLng;
 
+  List<LatLng> _listLocations = [];
+  List<LatLng> get listLocations => _listLocations;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -134,6 +137,7 @@ class MetroMapProvider extends ChangeNotifier {
     );
     _selectedPlaceLatLng = LatLng(details?.lat ?? 0, details?.lng ?? 0);
     _isOnSelectedLocation = true;
+    _listLocations.add(_selectedPlaceLatLng!);
     notifyListeners();
     final routeRequest = RouteRequest(
       points: [

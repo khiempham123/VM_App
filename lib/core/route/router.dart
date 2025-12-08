@@ -13,6 +13,7 @@ import 'package:vm_first_app/modules/main/main_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vietmap_flutter_navigation/vietmap_flutter_navigation.dart';
 import 'package:vm_first_app/domain/domain.dart';
+import 'package:collection/collection.dart';
 export 'package:auto_route/auto_route.dart';
 
 

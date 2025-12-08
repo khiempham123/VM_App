@@ -156,6 +156,26 @@ class MyTripRouteProvider extends ChangeNotifier {
       ? metroStations[_selectedMetroStationIndex!]
       : null;
 
+  // Current trip name
+  String? _currentTripName;
+  String? get currentTripName => _currentTripName;
+
+  // List of saved trip names
+  Set<String> _savedTripNames = {};
+  Set<String> get savedTripNames => _savedTripNames;
+
+  // Loading state for saved trip names
+  bool _isLoadingSavedTrips = false;
+  bool get isLoadingSavedTrips => _isLoadingSavedTrips;
+
+  // Error state for loading trips
+  String? _loadTripsError;
+  String? get loadTripsError => _loadTripsError;
+
+  // Flag to indicate if trips have been loaded at least once
+  bool _hasFetchedTrips = false;
+  bool get hasFetchedTrips => _hasFetchedTrips;
+
   MyTripRouteProvider(this.appProvider) {
     Vietmap.getInstance('${dotenv.env['VM_API_KEY']}');
     _metroMapRepository = locator<MetroMapRepository>();
@@ -424,10 +444,7 @@ class MyTripRouteProvider extends ChangeNotifier {
             lat: _currentPlaceLatLng!.latitude,
             lng: _currentPlaceLatLng!.longitude,
           ),
-          RoutePointRequest(
-            lat: _longPressedLocation!.latitude,
-            lng: _longPressedLocation!.longitude,
-          ),
+          ...allLongPressedLocations.map((location) => RoutePointRequest(lat: location.latitude, lng: location.longitude)),
         ],
         vehicle: 'car',
       );
@@ -541,7 +558,7 @@ class MyTripRouteProvider extends ChangeNotifier {
   }
 
   /// Add current long pressed location to trip waypoints
-  void addToTrip() {
+  void addToTrip() async {
     if (_longPressedLocation != null && _reverseEntity != null) {
       // Check if location already exists in trip
       if (!isLocationInTrip(_longPressedLocation!)) {
@@ -581,9 +598,117 @@ class MyTripRouteProvider extends ChangeNotifier {
   void clearAllTrip() {
     _tripWaypoints.clear();
     _tripWaypointEntities.clear();
+    _allLongPressedEntities.clear();
+    _allLongPressedLocations.clear();
     notifyListeners();
   }
 
+  void storageMyTrip(String tripName) async {
+    if (_allLongPressedEntities.isEmpty) return;
+
+    // Build key with format: trip_tripName_listofrefId
+    final refIdList = _allLongPressedEntities.map((e) => e.refId).join('_');
+    final key = 'trip_{$tripName}_$refIdList';
+
+    await _routeRepository.setMyRouteTrip(_allLongPressedEntities, key);
+    _currentTripName = tripName;
+    await loadSavedTripNames();
+    notifyListeners();
+  }
+
+  // Create a new trip with a name
+  Future<void> createNewTrip(String tripName) async {
+    _currentTripName = tripName;
+    // Clear current trip data to start fresh
+    clearAllTrip();
+    notifyListeners();
+  }
+
+  // Load all saved trip names from SharedPreferences
+  Future<void> loadSavedTripNames() async {
+    _isLoadingSavedTrips = true;
+    _loadTripsError = null;
+    notifyListeners();
+
+    try {
+      _savedTripNames = await _routeRepository.getSavedTripNames();
+      _hasFetchedTrips = true;
+      _loadTripsError = null;
+    } catch (e) {
+      debugPrint('Error loading saved trip names: $e');
+      _loadTripsError = 'Không thể tải danh sách chuyến đi';
+    }
+    _isLoadingSavedTrips = false;
+    notifyListeners();
+  }
+
+  // Load trip markers by trip name
+  Future<void> loadTripMarkers(String tripName) async {
+    try {
+      _currentTripName = tripName;
+      // Clear current markers
+      _allLongPressedLocations.clear();
+      _allLongPressedEntities.clear();
+      _tripWaypoints.clear();
+      _tripWaypointEntities.clear();
+
+      // Load trip from storage
+      final trips = await _routeRepository.getTripByName(tripName);
+      for (final entity in trips) {
+        final latLng = LatLng(entity.lat, entity.lng);
+        _allLongPressedLocations.add(latLng);
+        _allLongPressedEntities.add(entity);
+        _tripWaypoints.add(latLng);
+        _tripWaypointEntities.add(entity);
+      }
+
+      _isOnLongPressedLocation = _allLongPressedLocations.isNotEmpty;
+      _isReverseDrawn = _allLongPressedEntities.isNotEmpty;
+
+      if (_allLongPressedLocations.isNotEmpty) {
+        _longPressedLocation = _allLongPressedLocations.last;
+        _reverseEntity = _allLongPressedEntities.last;
+      }
+
+      // Show all loaded markers on map
+      if (_allLongPressedLocations.isNotEmpty && _vietmapController != null) {
+        // Calculate bounds to show all markers
+        double minLat = _allLongPressedLocations.first.latitude;
+        double maxLat = _allLongPressedLocations.first.latitude;
+        double minLng = _allLongPressedLocations.first.longitude;
+        double maxLng = _allLongPressedLocations.first.longitude;
+
+        for (final location in _allLongPressedLocations) {
+          if (location.latitude < minLat) minLat = location.latitude;
+          if (location.latitude > maxLat) maxLat = location.latitude;
+          if (location.longitude < minLng) minLng = location.longitude;
+          if (location.longitude > maxLng) maxLng = location.longitude;
+        }
+
+        final bounds = LatLngBounds(
+          southwest: LatLng(minLat - 0.01, minLng - 0.01),
+          northeast: LatLng(maxLat + 0.01, maxLng + 0.01),
+        );
+
+        await _vietmapController!.moveCamera(
+          CameraUpdate.newLatLngBounds(bounds, left: 50, right: 50, top: 150, bottom: 100),
+        );
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading trip markers: $e');
+    }
+  }
+
+  // Check if current trip has markers to save
+  bool get hasMarkersToSave => _allLongPressedLocations.isNotEmpty;
+
+  Future<void> deleteTripByName(String tripName) async {
+    await _routeRepository.deleteTripByName(tripName);
+    await loadSavedTripNames();
+    notifyListeners();
+  }
   void clearSelectedLocation() {
     _selectedPlace = null;
     _selectedPlaceLatLng = null;

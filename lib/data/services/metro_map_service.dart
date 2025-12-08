@@ -40,8 +40,7 @@ extension MetroMapServiceExtension on MetroMapService {
 
 
       return PlaceDetailsDtoResponse.fromJson(jsonData);
-    } catch (e, stackTrace) {
-
+    } catch (e) {
       return null;
     }
   }

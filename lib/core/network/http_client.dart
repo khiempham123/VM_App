@@ -10,6 +10,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:vm_first_app/core/core.dart';
 
 final kAuthInfoKey = "auth_info";
+final kRoutePlcaeKey = "route_place";
 const kBaseUrl = 'https://dricon.fastmap.vn';
 
 String get baseUrlHandler => kBaseUrl;

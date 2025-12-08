@@ -17,12 +17,12 @@ final Map<String, IconData> someMap = {
 @RoutePage()
 class MetroGoNavigationScreen extends StatelessWidget {
   final LatLng currentLocation;
-  final LatLng selectedLocation;
+  final List<LatLng> listLocations;
   final RouteEntity route;
   const MetroGoNavigationScreen({
     super.key,
     required this.currentLocation,
-    required this.selectedLocation,
+    required this.listLocations,
     required this.route,
   });
 
@@ -31,7 +31,7 @@ class MetroGoNavigationScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => MetroGoNavigationProvider(
         currentLocation: currentLocation,
-        selectedLocation: selectedLocation,
+        listLocations: listLocations,
         route: route,
       ),
       child: const _MetroGoNavigationView(),
@@ -85,6 +85,27 @@ class _MetroGoNavigationView extends StatelessWidget {
                             ),
                           ),
                         ),
+
+                        // Waypoints info header
+                        if (providerValue.totalWaypoints > 1)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Row(
+                              children: [
+                                Icon(Icons.route, color: Colors.blue, size: 24),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Hành trình: ${providerValue.totalWaypoints} điểm đến',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
                         // Action buttons
                         Padding(
@@ -282,9 +303,67 @@ class _MetroGoNavigationView extends StatelessWidget {
               top: MediaQuery.of(context).viewPadding.top,
               left: 0,
               right: 0,
-              child: BannerInstructionView(
-                routeProgressEvent: provider.routeProgressEvent,
-                instructionIcon: provider.instructionImage,
+              child: Column(
+                children: [
+                  BannerInstructionView(
+                    routeProgressEvent: provider.routeProgressEvent,
+                    instructionIcon: provider.instructionImage,
+                  ),
+                  // Waypoint progress indicator (only show when navigating with multiple waypoints)
+                  if (provider.isNavigating && provider.totalWaypoints > 1)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            provider.isAtFinalDestination ? Icons.flag : Icons.pin_drop,
+                            color: provider.isAtFinalDestination ? Colors.green : Colors.blue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            provider.isAtFinalDestination
+                                ? 'Điểm đến cuối cùng'
+                                : 'Điểm ${provider.currentWaypointIndex + 1}/${provider.totalWaypoints}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (provider.hasMoreWaypoints) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Còn ${provider.remainingWaypoints} điểm',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
 

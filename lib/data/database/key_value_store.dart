@@ -18,6 +18,8 @@ abstract class KeyValueStorage {
   Future<Map<String, dynamic>?> getMap(String key);
   Future<bool> setMap(String key, Map<String, dynamic>? value);
   Future<bool> clear();
+  Future<Set<String>> keys();
+  Future<bool> remove(String key);
 }
 
 class SharedPreferencesKeyValueStorage implements KeyValueStorage {
@@ -158,5 +160,17 @@ class SharedPreferencesKeyValueStorage implements KeyValueStorage {
       return _pref.remove(key);
     }
     return _pref.setInt(key, value);
+  }
+
+  @override
+  Future<Set<String>> keys() async {
+    await ensureLoaded();
+    return _pref.getKeys();
+  }
+
+  @override
+  Future<bool> remove(String key) async {
+    await ensureLoaded();
+    return _pref.remove(key);
   }
 }

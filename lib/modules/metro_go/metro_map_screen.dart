@@ -129,17 +129,26 @@ class _MetroMapViewState extends State<_MetroMapView> {
               mini: true,
               tooltip: 'Starting Navigation',
               onPressed: (provider.currentPlaceLatLng != null &&
-                         provider.selectedPlaceLatLng != null)
-                  ? () => context.pushRoute(MetroGoNavigationRoute(currentLocation: provider.currentPlaceLatLng!, selectedLocation: provider.selectedPlaceLatLng!, route: provider.routeEntity!))
+                         provider.selectedPlaceLatLng != null &&
+                         provider.listLocations.isNotEmpty &&
+                         provider.routeEntity != null)
+                  ? () => context.pushRoute(MetroGoNavigationRoute(
+                      currentLocation: provider.currentPlaceLatLng!,
+                      listLocations: provider.listLocations,
+                      route: provider.routeEntity!))
                   : null,
               backgroundColor: (provider.currentPlaceLatLng != null &&
-                                provider.selectedPlaceLatLng != null)
+                                provider.selectedPlaceLatLng != null &&
+                                provider.listLocations.isNotEmpty &&
+                                provider.routeEntity != null)
                   ? null
                   : Colors.grey,
               child: Icon(
                 Icons.near_me_outlined,
                 color: (provider.currentPlaceLatLng != null &&
-                       provider.selectedPlaceLatLng != null)
+                       provider.selectedPlaceLatLng != null &&
+                       provider.listLocations.isNotEmpty &&
+                       provider.routeEntity != null)
                     ? AppColors.primary
                     : Colors.white,
               ),
@@ -162,6 +171,7 @@ class _MetroMapViewState extends State<_MetroMapView> {
                 mini: true,
                 tooltip: 'My trip routes',
                 onPressed: () => {},
+                child: const Icon(Icons.person_pin_circle_outlined, color: AppColors.primary),
             ),
           )
         ],
