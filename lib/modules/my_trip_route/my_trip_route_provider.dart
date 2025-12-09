@@ -104,10 +104,14 @@ class MyTripRouteProvider extends ChangeNotifier {
   // Nearest metro station properties
   int? _nearestStationIndex;
   int? get nearestStationIndex => _nearestStationIndex;
-  String? get nearestStationName => _nearestStationIndex != null
+  String? get nearestStationName => _nearestStationIndex != null &&
+      _nearestStationIndex! >= 0 &&
+      _nearestStationIndex! < metroStationNames.length
       ? metroStationNames[_nearestStationIndex!]
       : null;
-  LatLng? get nearestStationLatLng => _nearestStationIndex != null
+  LatLng? get nearestStationLatLng => _nearestStationIndex != null &&
+      _nearestStationIndex! >= 0 &&
+      _nearestStationIndex! < metroStations.length
       ? metroStations[_nearestStationIndex!]
       : null;
   double? _distanceToNearestStation;
@@ -149,10 +153,14 @@ class MyTripRouteProvider extends ChangeNotifier {
   // Selected metro station
   int? _selectedMetroStationIndex;
   int? get selectedMetroStationIndex => _selectedMetroStationIndex;
-  String? get selectedMetroStationName => _selectedMetroStationIndex != null
+  String? get selectedMetroStationName => _selectedMetroStationIndex != null &&
+      _selectedMetroStationIndex! >= 0 &&
+      _selectedMetroStationIndex! < metroStationNames.length
       ? metroStationNames[_selectedMetroStationIndex!]
       : null;
-  LatLng? get selectedMetroStationLatLng => _selectedMetroStationIndex != null
+  LatLng? get selectedMetroStationLatLng => _selectedMetroStationIndex != null &&
+      _selectedMetroStationIndex! >= 0 &&
+      _selectedMetroStationIndex! < metroStations.length
       ? metroStations[_selectedMetroStationIndex!]
       : null;
 
@@ -175,6 +183,10 @@ class MyTripRouteProvider extends ChangeNotifier {
   // Flag to indicate if trips have been loaded at least once
   bool _hasFetchedTrips = false;
   bool get hasFetchedTrips => _hasFetchedTrips;
+
+  // Add place to trip
+  bool _isPlaceAdded = false;
+  bool get isPlaceAdded => _isPlaceAdded;
 
   MyTripRouteProvider(this.appProvider) {
     Vietmap.getInstance('${dotenv.env['VM_API_KEY']}');
@@ -201,9 +213,6 @@ class MyTripRouteProvider extends ChangeNotifier {
           polylineWidth: 4.0,
         ),
       );
-
-      // Markers được hiển thị qua StaticMarkerLayer trong screen
-      // không cần thêm marker thủ công ở đây
 
       _isMetroRouteDrawn = true;
       notifyListeners();
@@ -255,6 +264,8 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   /// Find the nearest metro station from a given location
   void _findNearestMetroStation(LatLng userLocation) {
+    if (metroStations.isEmpty || metroStationNames.isEmpty) return;
+
     double minDistance = double.infinity;
     int nearestIndex = 0;
 
@@ -266,9 +277,12 @@ class MyTripRouteProvider extends ChangeNotifier {
       }
     }
 
-    _nearestStationIndex = nearestIndex;
-    _distanceToNearestStation = minDistance;
-    debugPrint('Nearest station: ${metroStationNames[nearestIndex]} - Distance: ${minDistance.toStringAsFixed(2)} km');
+    // Guard: đảm bảo nearestIndex trong range hợp lệ (0-13)
+    if (nearestIndex >= 0 && nearestIndex < metroStationNames.length) {
+      _nearestStationIndex = nearestIndex;
+      _distanceToNearestStation = minDistance;
+      debugPrint('Nearest station: ${metroStationNames[nearestIndex]} - Distance: ${minDistance.toStringAsFixed(2)} km');
+    }
   }
 
   /// Draw route from current location to the nearest metro station
@@ -475,6 +489,10 @@ class MyTripRouteProvider extends ChangeNotifier {
       _isOnLongPressedLocation = false;
       _isReverseDrawn = false;
     }
+
+    if(!_allLongPressedLocations.isNotEmpty) {
+      _currentTripName = '';
+    }
     notifyListeners();
   }
   
@@ -564,6 +582,7 @@ class MyTripRouteProvider extends ChangeNotifier {
       if (!isLocationInTrip(_longPressedLocation!)) {
         _tripWaypoints.add(_longPressedLocation!);
         _tripWaypointEntities.add(_reverseEntity!);
+        _isPlaceAdded = true;
         notifyListeners();
       }
     }
@@ -582,6 +601,10 @@ class MyTripRouteProvider extends ChangeNotifier {
         _tripWaypointEntities.removeAt(index);
         notifyListeners();
       }
+    }
+    if(!_tripWaypoints.isNotEmpty) {
+      _isPlaceAdded = false;
+      notifyListeners();
     }
   }
 
@@ -706,9 +729,21 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   Future<void> deleteTripByName(String tripName) async {
     await _routeRepository.deleteTripByName(tripName);
+    if(_currentTripName == tripName) {
+      _currentTripName = '';
+    }
+    _allLongPressedLocations.clear();
+    _allLongPressedEntities.clear();
+    _tripWaypoints.clear();
+    _tripWaypointEntities.clear();
+    _longPressedLocation = null;
+    _reverseEntity = null;
+    _isOnLongPressedLocation = false;
+    _isReverseDrawn = false;
     await loadSavedTripNames();
     notifyListeners();
   }
+
   void clearSelectedLocation() {
     _selectedPlace = null;
     _selectedPlaceLatLng = null;

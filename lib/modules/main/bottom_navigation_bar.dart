@@ -121,30 +121,26 @@ class _TabIcon extends StatelessWidget {
       child: InkWell(
         onTapDown: (_) => onTapDown?.call(),
         borderRadius: BorderRadius.circular(8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    icon,
-                    const SizedBox(height: 2),
-                    Text(
-                      label,
-                      style: style,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 4.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                icon,
+                const SizedBox(height: 2),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: style,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

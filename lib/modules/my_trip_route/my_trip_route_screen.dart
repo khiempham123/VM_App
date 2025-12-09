@@ -8,15 +8,27 @@ import 'package:provider/provider.dart';
 import 'package:vm_first_app/domain/domain.dart';
 import 'package:vm_first_app/modules/my_trip_route/my_trip_route_provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 @RoutePage()
 class MyTripRouteScreen extends StatelessWidget {
-  const MyTripRouteScreen({super.key});
+  final String? tripName;
+
+  const MyTripRouteScreen({super.key, this.tripName});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => MyTripRouteProvider(locator<AppProvider>()),
+      create: (context) {
+        final provider = MyTripRouteProvider(locator<AppProvider>());
+        if (tripName != null && tripName!.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.loadTripMarkers(tripName!);
+          });
+        }
+        return provider;
+      },
       child: const _MyTripRouteView(),
     );
   }
@@ -81,6 +93,16 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               markers: provider.allLongPressedLocations.asMap().entries.map((entry) {
                 final index = entry.key;
                 final location = entry.value;
+                // Guard: kiểm tra index hợp lệ trước khi truy cập
+                if (index >= provider.allLongPressedEntities.length) {
+                  return StaticMarker(
+                    width: 50,
+                    height: 50,
+                    bearing: 0,
+                    child: const Icon(Icons.location_on, color: Colors.grey, size: 25),
+                    latLng: location,
+                  );
+                }
                 final entity = provider.allLongPressedEntities[index];
                 final isCurrentSelected = provider.longPressedLocation != null &&
                     location.latitude == provider.longPressedLocation!.latitude &&
@@ -144,11 +166,11 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                 )
                               : null,
                           child: Icon(
-                            isInTrip ? Icons.flag : Icons.location_on,
+                            isInTrip ? Icons.add_location_alt_rounded : Icons.location_on,
                             color: isInTrip
-                                ? Colors.orange
+                                ? AppColors.info
                                 : (isCurrentSelected ? AppColors.primaryLight : Colors.grey),
-                            size: isCurrentSelected ? 40 : 32,
+                            size: isCurrentSelected ? 30 : 25,
                           ),
                         ),
                       ],
@@ -180,92 +202,11 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               ignorePointer: true,
             ),
 
-          // Metro Stations Markers with Tooltip
+          // Metro Stations Markers - tách thành widget riêng để chỉ render 1 lần
           if (provider.isMapReady)
-            StaticMarkerLayer(
-              key: ValueKey('metroStations_${provider.selectedMetroStationIndex}'),
-              mapController: provider.vietmapController,
-              markers: provider.metroStations.asMap().entries.map((entry) {
-                final index = entry.key;
-                final station = entry.value;
-                final stationName = provider.metroStationNames[index];
-                final isSelected = provider.selectedMetroStationIndex == index;
-
-                return StaticMarker(
-                  width: isSelected ? 150 : 40,
-                  height: isSelected ? 80 : 40,
-                  bearing: 0,
-                  child: GestureDetector(
-                    onTap: () {
-                      provider.selectMetroStation(index);
-                      _showMetroStationBottomSheet(context, provider, index);
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Tooltip - chỉ hiển thị khi ga metro đang được chọn
-                        if (isSelected)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            margin: const EdgeInsets.only(bottom: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade700,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              stationName,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        // Metro station icon
-                        Container(
-                          width: isSelected ? 32 : 24,
-                          height: isSelected ? 32 : 24,
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue.shade700 : AppColors.error,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: isSelected ? 3 : 2,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.5),
-                                      blurRadius: 10,
-                                      spreadRadius: 2,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.train,
-                              color: Colors.white,
-                              size: isSelected ? 18 : 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  latLng: station,
-                );
-              }).toList(),
+            _MetroStationMarkersLayer(
+              provider: provider,
+              onStationTap: (index) => _showMetroStationBottomSheet(context, provider, index),
             ),
 
           // Metro stations info panel
@@ -276,10 +217,10 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
             child: Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(6),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,51 +242,29 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                         ),
                         Row(
                           children: [
-                            // Create new trip button
-                            IconButton(
-                              icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-                              tooltip: 'Tạo chuyến đi mới',
-                              onPressed: () => _showCreateTripDialog(context, provider),
-                            ),
-                            // Saved trips menu button - wrapped with IconButton for better state handling
-                            IconButton(
-                              icon: const Icon(Icons.format_list_bulleted_add, color: AppColors.primary),
-                              tooltip: 'Danh sách chuyến đi',
-                              onPressed: () async {
-                                // Load data first
-                                await provider.loadSavedTripNames();
 
-                                if (!context.mounted) return;
-
-                                // Show popup menu after data is loaded
-                                final RenderBox button = context.findRenderObject() as RenderBox;
-                                final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-                                final RelativeRect position = RelativeRect.fromRect(
-                                  Rect.fromPoints(
-                                    button.localToGlobal(Offset.zero, ancestor: overlay),
-                                    button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-                                  ),
-                                  Offset.zero & overlay.size,
-                                );
-
-                                final selectedTrip = await showMenu<String>(
-                                  context: context,
-                                  position: position,
-                                  items: _buildTripMenuItems(provider),
-                                );
-
-                                if (selectedTrip != null && context.mounted) {
-                                  await provider.loadTripMarkers(selectedTrip);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Trip: ${TripNameParser.getTripName(selectedTrip)} is loaded'),
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-                                  }
+                            // Saved trips menu anchor
+                            _TripsMenuAnchor(
+                              provider: provider,
+                              onTripSelected: (tripName) async {
+                                await provider.loadTripMarkers(tripName);
+                                if (context.mounted) {
+                                  showTopSnackBar(
+                                    Overlay.of(context),
+                                    CustomSnackBar.info(
+                                      message:
+                                      "Trip: ${TripNameParser.getTripName(tripName)} is loaded",
+                                    ),
+                                    snackBarPosition: SnackBarPosition.bottom,
+                                  );
                                 }
                               },
+                              onDeleteTrip: (tripName) => _showDeleteTripDialog(context, provider, tripName),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                              tooltip: 'Create your strip',
+                              onPressed: () => _showCreateTripDialog(context, provider),
                             ),
                           ],
                         ),
@@ -396,10 +315,10 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Material(
-                elevation: 10,
-                borderRadius: BorderRadius.circular(24),
+                elevation: 4,
+                borderRadius: BorderRadius.circular(16),
                 child: TypeAheadField<PlaceEntity>(
                   controller: provider.searchController,
                   focusNode: FocusNode(),
@@ -492,7 +411,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
             ),
 
           // Save Trip Button - only show when user has added markers by long press
-          if (provider.hasMarkersToSave)
+          if (provider.hasMarkersToSave && provider.isPlaceAdded)
             Positioned(
               bottom: 200,
               right: 0.0,
@@ -510,75 +429,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
     );
   }
 
-  List<PopupMenuEntry<String>> _buildTripMenuItems(MyTripRouteProvider provider) {
-    // Error state
-    if (provider.loadTripsError != null) {
-      return [
-        PopupMenuItem<String>(
-          enabled: false,
-          child: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  provider.loadTripsError!,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ];
-    }
-
-    // Empty state
-    if (provider.savedTripNames.isEmpty) {
-      return [
-        const PopupMenuItem<String>(
-          enabled: false,
-          child: Row(
-            children: [
-              Icon(Icons.folder_open, color: Colors.grey, size: 20),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Chưa có chuyến đi nào được lưu.\nHãy thêm điểm đến và lưu chuyến đi.',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ];
-    }
-
-    // Has saved trips - with long press to delete
-    return provider.savedTripNames.map((tripName) {
-      return PopupMenuItem<String>(
-        value: tripName,
-        child: Row(
-          children: [
-            const Icon(Icons.map, color: AppColors.primary, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(TripNameParser.getTripName(tripName))),
-            // Delete button
-            GestureDetector(
-              onTap: () {
-                // Close popup first, then show delete dialog
-                Navigator.of(context).pop();
-                _showDeleteTripDialog(context, provider, tripName);
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(4.0),
-                child: Icon(Icons.delete_outline, color: Colors.red, size: 20),
-              ),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
 
   void _showDeleteTripDialog(BuildContext context, MyTripRouteProvider provider, String tripName) {
     showDialog(
@@ -594,7 +444,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Xóa chuyến đi',
+                  'Delete trip',
                   style: TextStyle(fontSize: 18),
                 ),
               ),
@@ -608,11 +458,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                 'Bạn có chắc chắn muốn xóa chuyến đi "${TripNameParser.getTripName(tripName)}"?',
                 style: const TextStyle(fontSize: 15),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Hành động này không thể hoàn tác.',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
             ],
           ),
           actions: [
@@ -620,19 +465,20 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Hủy'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton.icon(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
                 await provider.deleteTripByName(tripName);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đã xóa chuyến đi: ${TripNameParser.getTripName(tripName)}'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 2),
+                  showTopSnackBar(
+                    Overlay.of(context),
+                    CustomSnackBar.error(
+                      message:
+                      'Trip: ${TripNameParser.getTripName(tripName)} is delete'
                     ),
+                    snackBarPosition: SnackBarPosition.bottom,
                   );
                 }
               },
@@ -753,7 +599,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                               },
                               icon: const Icon(Icons.directions, color: Colors.white, size: 20),
                               label: const Text(
-                                'Chỉ đường',
+                                'Go now',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -788,11 +634,13 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                       : () {
                                           providerValue.addToTrip();
                                           Navigator.of(bottomSheetContext).pop();
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Đã thêm vào hành trình'),
-                                              duration: Duration(seconds: 1),
+                                          showTopSnackBar(
+                                            Overlay.of(context),
+                                            CustomSnackBar.info(
+                                              message:
+                                              "Add to my trip",
                                             ),
+                                            snackBarPosition: SnackBarPosition.bottom,
                                           );
                                         },
                                   icon: Icon(
@@ -804,7 +652,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                     size: 18,
                                   ),
                                   label: Text(
-                                    'Thêm',
+                                    'Add new place',
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
@@ -835,11 +683,13 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                       ? () {
                                           providerValue.removeFromTrip();
                                           Navigator.of(bottomSheetContext).pop();
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Đã bỏ khỏi hành trình'),
-                                              duration: Duration(seconds: 1),
+                                          showTopSnackBar(
+                                            Overlay.of(context),
+                                            CustomSnackBar.info(
+                                              message:
+                                              "Remove from trip",
                                             ),
+                                            snackBarPosition: SnackBarPosition.bottom,
                                           );
                                         }
                                       : null,
@@ -852,7 +702,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                     size: 18,
                                   ),
                                   label: Text(
-                                    'Bỏ',
+                                    'Remove this place',
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
@@ -879,7 +729,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                 Navigator.of(bottomSheetContext).pop();
                               },
                               child: const Text(
-                                'Đóng',
+                                'Close',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,
@@ -901,6 +751,11 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
   }
 
   void _showMetroStationBottomSheet(BuildContext context, MyTripRouteProvider provider, int stationIndex) {
+    // Guard: kiểm tra stationIndex hợp lệ (0-13 cho 14 nhà ga)
+    if (stationIndex < 0 || stationIndex >= provider.metroStationNames.length) {
+      debugPrint('Invalid stationIndex: $stationIndex. Valid range: 0-${provider.metroStationNames.length - 1}');
+      return;
+    }
     final stationName = provider.metroStationNames[stationIndex];
 
     showModalBottomSheet(
@@ -1088,7 +943,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Tạo chuyến đi mới',
+                  'Create your trip',
                   style: TextStyle(fontSize: 18),
                 ),
               ),
@@ -1109,11 +964,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                 ),
                 autofocus: true,
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Sau khi tạo, bạn có thể thêm các điểm đến bằng cách nhấn giữ trên bản đồ.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
             ],
           ),
           actions: [
@@ -1121,24 +971,27 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Hủy'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton.icon(
+
               onPressed: () {
                 final tripName = tripNameController.text.trim();
                 if (tripName.isNotEmpty) {
                   provider.createNewTrip(tripName);
                   Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đã tạo chuyến đi: $tripName'),
-                      duration: const Duration(seconds: 2),
+                  showTopSnackBar(
+                    Overlay.of(context),
+                    CustomSnackBar.success(
+                      message:
+                      'Trip: $tripName is created',
                     ),
+                    snackBarPosition: SnackBarPosition.bottom,
                   );
                 }
               },
               icon: const Icon(Icons.check),
-              label: const Text('Tạo'),
+              label: const Text('Create'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -1171,7 +1024,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Lưu chuyến đi',
+                  'Save my trip',
                   style: TextStyle(fontSize: 18),
                 ),
               ),
@@ -1183,8 +1036,8 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               TextField(
                 controller: tripNameController,
                 decoration: InputDecoration(
-                  labelText: 'Tên chuyến đi',
-                  hintText: 'Nhập tên chuyến đi...',
+                  labelText: 'Trip Name',
+                  hintText: 'Enter your new journey...',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1194,7 +1047,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Chuyến đi có ${provider.allLongPressedLocations.length} điểm đến',
+                'Trip has ${provider.allLongPressedLocations.length} arrival points',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -1213,12 +1066,13 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                   provider.storageMyTrip(tripName);
                   if (context.mounted) {
                     Navigator.of(dialogContext).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Saved: ${TripNameParser.getTripName(tripName)}'),
-                        backgroundColor: Colors.green,
-                        duration: const Duration(seconds: 2),
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      CustomSnackBar.info(
+                        message:
+                        "Saved: ${TripNameParser.getTripName(tripName)}",
                       ),
+                      snackBarPosition: SnackBarPosition.bottom,
                     );
                   }
                 }
@@ -1246,7 +1100,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
           ),
           title: Row(
             children: [
-              Icon(Icons.train, color: Colors.blue),
+              Icon(Icons.train, color: AppColors.primaryLight),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -1313,6 +1167,297 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
 }
 
 
+class _TripsMenuAnchor extends StatefulWidget {
+  final MyTripRouteProvider provider;
+  final Function(String tripName) onTripSelected;
+  final Function(String tripName) onDeleteTrip;
+
+  const _TripsMenuAnchor({
+    required this.provider,
+    required this.onTripSelected,
+    required this.onDeleteTrip,
+  });
+
+  @override
+  State<_TripsMenuAnchor> createState() => _TripsMenuAnchorState();
+}
+
+class _TripsMenuAnchorState extends State<_TripsMenuAnchor> {
+  final MenuController _menuController = MenuController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<MyTripRouteProvider>(
+      builder: (context, provider, child) {
+        return MenuAnchor(
+          controller: _menuController,
+          alignmentOffset: const Offset(-45, 0), // Điều chỉnh vị trí menu: x âm = sang trái, y dương = xuống dưới
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.white),
+            surfaceTintColor: WidgetStatePropertyAll(Colors.transparent),
+            elevation: WidgetStatePropertyAll(8),
+            shadowColor: WidgetStatePropertyAll(Colors.black26),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+            ),
+            padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
+          ),
+          menuChildren: _buildMenuChildren(context, provider),
+          onOpen: () {
+            // Tự động load dữ liệu khi menu mở
+            if (!provider.hasFetchedTrips) {
+              provider.loadSavedTripNames();
+            }
+          },
+          builder: (BuildContext context, MenuController controller, Widget? child) {
+            return IconButton(
+              icon: provider.isLoadingSavedTrips
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : const Icon(Icons.format_list_bulleted_add, color: AppColors.primary),
+              tooltip: 'Danh sách chuyến đi',
+              onPressed: () {
+                if (controller.isOpen) {
+                  controller.close();
+                } else {
+                  controller.open();
+                }
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildMenuChildren(BuildContext context, MyTripRouteProvider provider) {
+    // Loading state
+    if (provider.isLoadingSavedTrips) {
+      return [
+        Container(
+          width: 220,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Đang tải...',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    // Error state
+    if (provider.loadTripsError != null) {
+      return [
+        Container(
+          width: 260,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      provider.loadTripsError!,
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    _menuController.close();
+                    provider.loadSavedTripNames();
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      _menuController.open();
+                    });
+                  },
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Thử lại'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    // Empty state
+    if (provider.savedTripNames.isEmpty) {
+      return [
+        Container(
+          width: 260,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.folder_open_outlined,
+                  color: Colors.grey.shade400,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Chưa có chuyến đi nào',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Hãy thêm điểm đến và lưu chuyến đi.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    // Header
+    final List<Widget> items = [
+      Container(
+        width: 150,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.bookmark_outline, color: AppColors.primary, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Your trip',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Divider(height: 1, color: Colors.grey.shade200),
+    ];
+
+    // Trip items
+    for (final tripName in provider.savedTripNames) {
+      items.add(
+        InkWell(
+          onTap: () {
+            _menuController.close();
+            widget.onTripSelected(tripName);
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 150,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.route_outlined,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    TripNameParser.getTripName(tripName),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      _menuController.close();
+                      widget.onDeleteTrip(tripName);
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        Icons.clear,
+                        color: Colors.red.shade400,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return items;
+  }
+}
+
 
 class _VietmapWidget extends StatefulWidget {
   final Function(VietmapController) onMapCreated;
@@ -1348,6 +1493,167 @@ class _VietmapWidgetState extends State<_VietmapWidget> {
       myLocationRenderMode: MyLocationRenderMode.normal,
       compassEnabled: true,
       rotateGesturesEnabled: true,
+    );
+  }
+}
+
+/// Widget riêng để render Metro Station Markers
+/// Sử dụng Selector để chỉ rebuild khi selectedMetroStationIndex thay đổi
+class _MetroStationMarkersLayer extends StatefulWidget {
+  final MyTripRouteProvider provider;
+  final Function(int index) onStationTap;
+
+  const _MetroStationMarkersLayer({
+    required this.provider,
+    required this.onStationTap,
+  });
+
+  @override
+  State<_MetroStationMarkersLayer> createState() => _MetroStationMarkersLayerState();
+}
+
+class _MetroStationMarkersLayerState extends State<_MetroStationMarkersLayer> {
+  // Cache danh sách markers để không rebuild lại mỗi lần
+  late List<StaticMarker> _cachedMarkers;
+  int? _lastSelectedIndex;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _buildMarkers();
+  }
+
+  void _buildMarkers() {
+    final provider = widget.provider;
+    _lastSelectedIndex = provider.selectedMetroStationIndex;
+
+    _cachedMarkers = provider.metroStations.asMap().entries.map((entry) {
+      final index = entry.key;
+      final station = entry.value;
+      debugPrint('Index: $index');
+      // Guard: kiểm tra index hợp lệ (0-13 cho 14 nhà ga)
+      if (index >= provider.metroStationNames.length) {
+        return StaticMarker(
+          width: 40,
+          height: 40,
+          bearing: 0,
+          child: const Icon(Icons.train, color: Colors.grey, size: 24),
+          latLng: station,
+        );
+      }
+
+      final stationName = provider.metroStationNames[index];
+      final isSelected = provider.selectedMetroStationIndex == index;
+
+      return StaticMarker(
+        width: isSelected ? 150 : 40,
+        height: isSelected ? 80 : 40,
+        bearing: 0,
+        child: GestureDetector(
+          onTap: () {
+            provider.selectMetroStation(index);
+            widget.onStationTap(index);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Tooltip - chỉ hiển thị khi ga metro đang được chọn
+              if (isSelected)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.only(bottom: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade700,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    stationName,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              // Metro station icon
+              Container(
+                width: isSelected ? 32 : 24,
+                height: isSelected ? 32 : 24,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue.shade700 : AppColors.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: isSelected ? 3 : 2,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.5),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.train,
+                    color: Colors.white,
+                    size: isSelected ? 18 : 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        latLng: station,
+      );
+    }).toList();
+
+    _isInitialized = true;
+  }
+
+  @override
+  void didUpdateWidget(covariant _MetroStationMarkersLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Chỉ rebuild markers khi selectedMetroStationIndex thay đổi
+    if (_lastSelectedIndex != widget.provider.selectedMetroStationIndex) {
+      _buildMarkers();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const SizedBox.shrink();
+    }
+
+    return Selector<MyTripRouteProvider, int?>(
+      selector: (_, provider) => provider.selectedMetroStationIndex,
+      builder: (context, selectedIndex, child) {
+        // Rebuild markers nếu selectedIndex thay đổi
+        if (_lastSelectedIndex != selectedIndex) {
+          _buildMarkers();
+        }
+
+        return StaticMarkerLayer(
+          key: ValueKey('metroStations_$selectedIndex'),
+          mapController: widget.provider.vietmapController,
+          markers: _cachedMarkers,
+        );
+      },
     );
   }
 }

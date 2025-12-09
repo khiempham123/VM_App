@@ -202,18 +202,48 @@ class MetroMapRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [MyTripRouteScreen]
-class MyTripRouteRoute extends PageRouteInfo<void> {
-  const MyTripRouteRoute({List<PageRouteInfo>? children})
-    : super(MyTripRouteRoute.name, initialChildren: children);
+class MyTripRouteRoute extends PageRouteInfo<MyTripRouteRouteArgs> {
+  MyTripRouteRoute({Key? key, String? tripName, List<PageRouteInfo>? children})
+    : super(
+        MyTripRouteRoute.name,
+        args: MyTripRouteRouteArgs(key: key, tripName: tripName),
+        initialChildren: children,
+      );
 
   static const String name = 'MyTripRouteRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const MyTripRouteScreen();
+      final args = data.argsAs<MyTripRouteRouteArgs>(
+        orElse: () => const MyTripRouteRouteArgs(),
+      );
+      return MyTripRouteScreen(key: args.key, tripName: args.tripName);
     },
   );
+}
+
+class MyTripRouteRouteArgs {
+  const MyTripRouteRouteArgs({this.key, this.tripName});
+
+  final Key? key;
+
+  final String? tripName;
+
+  @override
+  String toString() {
+    return 'MyTripRouteRouteArgs{key: $key, tripName: $tripName}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! MyTripRouteRouteArgs) return false;
+    return key == other.key && tripName == other.tripName;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ tripName.hashCode;
 }
 
 /// generated route for

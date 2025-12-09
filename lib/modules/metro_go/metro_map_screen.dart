@@ -155,8 +155,8 @@ class _MetroMapViewState extends State<_MetroMapView> {
             ),
           ),
           Positioned(
-            top: 140,
-            right: 0.0,
+            bottom: 10,
+            left: 30,
             child: FloatingActionButton(
               mini: true,
               tooltip: 'Add new my route',
@@ -165,14 +165,15 @@ class _MetroMapViewState extends State<_MetroMapView> {
             )
           ),
           Positioned(
-            bottom: 10,
-            left: 30,
-            child: FloatingActionButton(
-                mini: true,
-                tooltip: 'My trip routes',
-                onPressed: () => {},
-                child: const Icon(Icons.person_pin_circle_outlined, color: AppColors.primary),
-            ),
+            top: 140,
+            right: 0.0,
+            child: _SavedTripsMenuAnchor(provider: provider),
+            // child: FloatingActionButton(
+            //     mini: true,
+            //     tooltip: 'My trip routes',
+            //     onPressed: () => (),
+            //     child: const Icon(Icons.person_pin_circle_outlined, color: AppColors.primary),
+            // ),
           )
         ],
       ),
@@ -211,6 +212,169 @@ class _VietmapWidgetState extends State<_VietmapWidget> {
       myLocationRenderMode: MyLocationRenderMode.compass,
       compassEnabled: true,
       rotateGesturesEnabled: true,
+    );
+  }
+}
+
+class _SavedTripsMenuAnchor extends StatefulWidget {
+  const _SavedTripsMenuAnchor({
+    required this.provider,
+  });
+
+  final MetroMapProvider provider;
+
+  @override
+  State<_SavedTripsMenuAnchor> createState() => _SavedTripsMenuAnchorState();
+}
+
+class _SavedTripsMenuAnchorState extends State<_SavedTripsMenuAnchor> {
+  final GlobalKey _buttonKey = GlobalKey();
+  bool _isLoading = false;
+
+  Future<void> _showTripsMenu() async {
+    setState(() => _isLoading = true);
+
+    // Load danh sách chuyến đi
+    await widget.provider.loadAllTrip();
+
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    // Lấy vị trí của button
+    final RenderBox button = _buttonKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final Offset buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
+
+    // Tính vị trí menu hiển thị phía trên button
+    final RelativeRect position = RelativeRect.fromLTRB(
+      buttonPosition.dx,
+      buttonPosition.dy + 10,
+      overlay.size.width - buttonPosition.dx - button.size.width,
+      overlay.size.height - buttonPosition.dy,
+    );
+
+    final selectedTrip = await showMenu<String>(
+      context: context,
+      position: position,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
+      items: _buildMenuItems(),
+    );
+
+    if (selectedTrip != null && mounted) {
+      // Navigate tới MyTripRouteScreen với tripName
+      context.router.push(MyTripRouteRoute(tripName: selectedTrip));
+    }
+  }
+
+  List<PopupMenuEntry<String>> _buildMenuItems() {
+    final tripNames = widget.provider.savedTripNames;
+
+    // Empty state
+    if (tripNames.isEmpty) {
+      return [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Container(
+            width: 220,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.folder_open_outlined, color: Colors.grey.shade400, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'Chưa có chuyến đi nào',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Hãy tạo chuyến đi mới',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    }
+
+    // Header
+    final List<PopupMenuEntry<String>> items = [
+      PopupMenuItem<String>(
+        enabled: false,
+        height: 40,
+        child: Row(
+          children: [
+            Icon(Icons.bookmark_outline, color: AppColors.primary, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Chuyến đi đã lưu',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const PopupMenuDivider(height: 1),
+    ];
+
+    // Trip items
+    for (final tripName in tripNames) {
+      items.add(
+        PopupMenuItem<String>(
+          value: tripName,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.route_outlined, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  TripNameParser.getTripName(tripName),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return items;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      key: _buttonKey,
+      mini: true,
+      tooltip: 'My trip routes',
+      onPressed: _isLoading ? null : _showTripsMenu,
+      child: _isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+            )
+          : const Icon(Icons.person_pin_circle_outlined, color: AppColors.primary),
     );
   }
 }

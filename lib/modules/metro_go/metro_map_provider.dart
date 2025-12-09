@@ -83,6 +83,9 @@ class MetroMapProvider extends ChangeNotifier {
   List<PointLatLng> latLngList = [];
   List<LatLng> latLngListForRoute = [];
 
+  Set<String> _savedTripNames = {};
+  Set<String> get savedTripNames => _savedTripNames;
+
   void onMapCreated(VietmapController controller) {
     _vietmapController = controller;
     notifyListeners();
@@ -193,6 +196,22 @@ class MetroMapProvider extends ChangeNotifier {
           _isCalculatingRoute = false;
           notifyListeners();
         }
+  }
+
+  Future<void> loadAllTrip() async {
+     try{
+       _savedTripNames = await _routeRepository.getSavedTripNames();
+       notifyListeners();
+     }catch(e){
+       debugPrint('Error loading trips: $e');
+     }
+  }
+
+
+  Future<void> deleteTripByName(String tripName) async {
+    await _routeRepository.deleteTripByName(tripName);
+    await loadAllTrip();
+    notifyListeners();
   }
 
   @override

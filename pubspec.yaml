@@ -73,6 +73,8 @@ dependencies:
 
   flutter_typeahead: ^5.2.0
   adaptive_action_sheet: ^2.0.4
+  top_snackbar_flutter: ^3.3.0
+
 
 dev_dependencies:
   flutter_test:
