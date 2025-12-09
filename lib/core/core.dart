@@ -20,3 +20,5 @@ export 'theme/app_text_styles.dart';
 export 'theme/app_theme.dart';
 export 'utils/location_permission_service.dart';
 export 'utils/trip_name_parser.dart';
+export 'widgets/my_snack_bar.dart';
+

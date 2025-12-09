@@ -251,7 +251,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                 if (context.mounted) {
                                   showTopSnackBar(
                                     Overlay.of(context),
-                                    CustomSnackBar.info(
+                                    MySnackBar.info(
                                       message:
                                       "Trip: ${TripNameParser.getTripName(tripName)} is loaded",
                                     ),
@@ -474,7 +474,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                 if (context.mounted) {
                   showTopSnackBar(
                     Overlay.of(context),
-                    CustomSnackBar.error(
+                    MySnackBar.error(
                       message:
                       'Trip: ${TripNameParser.getTripName(tripName)} is delete'
                     ),
@@ -636,7 +636,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                           Navigator.of(bottomSheetContext).pop();
                                           showTopSnackBar(
                                             Overlay.of(context),
-                                            CustomSnackBar.info(
+                                            MySnackBar.info(
                                               message:
                                               "Add to my trip",
                                             ),
@@ -685,7 +685,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                           Navigator.of(bottomSheetContext).pop();
                                           showTopSnackBar(
                                             Overlay.of(context),
-                                            CustomSnackBar.info(
+                                            MySnackBar.info(
                                               message:
                                               "Remove from trip",
                                             ),
@@ -982,7 +982,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                   Navigator.of(dialogContext).pop();
                   showTopSnackBar(
                     Overlay.of(context),
-                    CustomSnackBar.success(
+                    MySnackBar.success(
                       message:
                       'Trip: $tripName is created',
                     ),
@@ -1068,7 +1068,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                     Navigator.of(dialogContext).pop();
                     showTopSnackBar(
                       Overlay.of(context),
-                      CustomSnackBar.info(
+                      MySnackBar.info(
                         message:
                         "Saved: ${TripNameParser.getTripName(tripName)}",
                       ),
@@ -1497,8 +1497,7 @@ class _VietmapWidgetState extends State<_VietmapWidget> {
   }
 }
 
-/// Widget riêng để render Metro Station Markers
-/// Sử dụng Selector để chỉ rebuild khi selectedMetroStationIndex thay đổi
+
 class _MetroStationMarkersLayer extends StatefulWidget {
   final MyTripRouteProvider provider;
   final Function(int index) onStationTap;
@@ -1513,7 +1512,6 @@ class _MetroStationMarkersLayer extends StatefulWidget {
 }
 
 class _MetroStationMarkersLayerState extends State<_MetroStationMarkersLayer> {
-  // Cache danh sách markers để không rebuild lại mỗi lần
   late List<StaticMarker> _cachedMarkers;
   int? _lastSelectedIndex;
   bool _isInitialized = false;
@@ -1532,16 +1530,6 @@ class _MetroStationMarkersLayerState extends State<_MetroStationMarkersLayer> {
       final index = entry.key;
       final station = entry.value;
       debugPrint('Index: $index');
-      // Guard: kiểm tra index hợp lệ (0-13 cho 14 nhà ga)
-      if (index >= provider.metroStationNames.length) {
-        return StaticMarker(
-          width: 40,
-          height: 40,
-          bearing: 0,
-          child: const Icon(Icons.train, color: Colors.grey, size: 24),
-          latLng: station,
-        );
-      }
 
       final stationName = provider.metroStationNames[index];
       final isSelected = provider.selectedMetroStationIndex == index;
