@@ -8,9 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:vm_first_app/domain/domain.dart';
 import 'package:vm_first_app/modules/my_trip_route/my_trip_route_provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+//import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
-
 @RoutePage()
 class MyTripRouteScreen extends StatelessWidget {
   final String? tripName;
@@ -60,6 +59,13 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                 _showLocationDetailBottomSheet(context, provider);
               }
             },
+            onSymbolTapped: (symbol) {
+              provider.onSymbolTapped(symbol);
+              // Show metro station bottom sheet if a metro station was tapped
+              if (provider.selectedMetroStationIndex != null) {
+                _showMetroStationBottomSheet(context, provider, provider.selectedMetroStationIndex!);
+              }
+            },
           ),
 
           // Search Bar
@@ -67,6 +73,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
 
           // Selected Location Marker (from search)
           if (provider.isMapReady && provider.isOnSelectedLocation && provider.selectedPlaceLatLng != null)
+
             StaticMarkerLayer(
               key: const ValueKey('selectedLocation'),
               mapController: provider.vietmapController,
@@ -202,12 +209,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               ignorePointer: true,
             ),
 
-          // Metro Stations Markers - tách thành widget riêng để chỉ render 1 lần
-          if (provider.isMapReady)
-            _MetroStationMarkersLayer(
-              provider: provider,
-              onStationTap: (index) => _showMetroStationBottomSheet(context, provider, index),
-            ),
 
           // Metro stations info panel
           Positioned(
@@ -242,8 +243,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                         ),
                         Row(
                           children: [
-
-                            // Saved trips menu anchor
                             _TripsMenuAnchor(
                               provider: provider,
                               onTripSelected: (tripName) async {
@@ -271,7 +270,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                       ],
                     ),
 
-                    // Show route info when route to station is drawn
                     if (provider.isRouteToStationDrawn && provider.nearestStationName != null) ...[
                       const Divider(),
                       Row(
@@ -313,6 +311,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
             ),
           ),
 
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -346,6 +345,8 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               ),
             ),
           ),
+
+
         ],
       ),
       floatingActionButton: Stack(
@@ -1004,9 +1005,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
   }
 
   void _showSaveTripDialog(BuildContext context, MyTripRouteProvider provider) {
-    // TripNameParser.getTripName handles both:
-    // - Simple trip name: "My Trip" -> "My Trip"
-    // - Full key format: "trip_{My Trip}_refId1_refId2" -> "My Trip"
     final TextEditingController tripNameController = TextEditingController(
       text: TripNameParser.getTripName(provider.currentTripName ?? ''),
     );
@@ -1462,10 +1460,12 @@ class _TripsMenuAnchorState extends State<_TripsMenuAnchor> {
 class _VietmapWidget extends StatefulWidget {
   final Function(VietmapController) onMapCreated;
   final Function(LatLng) onMapLongClick;
+  final Function(Symbol)? onSymbolTapped;
 
   const _VietmapWidget({
     required this.onMapCreated,
     required this.onMapLongClick,
+    this.onSymbolTapped,
   });
 
   @override
@@ -1483,7 +1483,13 @@ class _VietmapWidgetState extends State<_VietmapWidget> {
         target: LatLng(10.780000, 106.720000),
         zoom: 12.0,
       ),
-      onMapCreated: widget.onMapCreated,
+      onMapCreated: (controller) {
+        widget.onMapCreated(controller);
+        // Set up symbol tap listener
+        if (widget.onSymbolTapped != null) {
+          controller.onSymbolTapped.add(widget.onSymbolTapped!);
+        }
+      },
       onMapLongClick: (point, coordinates) {
         widget.onMapLongClick(coordinates);
       },
@@ -1493,155 +1499,6 @@ class _VietmapWidgetState extends State<_VietmapWidget> {
       myLocationRenderMode: MyLocationRenderMode.normal,
       compassEnabled: true,
       rotateGesturesEnabled: true,
-    );
-  }
-}
-
-
-class _MetroStationMarkersLayer extends StatefulWidget {
-  final MyTripRouteProvider provider;
-  final Function(int index) onStationTap;
-
-  const _MetroStationMarkersLayer({
-    required this.provider,
-    required this.onStationTap,
-  });
-
-  @override
-  State<_MetroStationMarkersLayer> createState() => _MetroStationMarkersLayerState();
-}
-
-class _MetroStationMarkersLayerState extends State<_MetroStationMarkersLayer> {
-  late List<StaticMarker> _cachedMarkers;
-  int? _lastSelectedIndex;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _buildMarkers();
-  }
-
-  void _buildMarkers() {
-    final provider = widget.provider;
-    _lastSelectedIndex = provider.selectedMetroStationIndex;
-
-    _cachedMarkers = provider.metroStations.asMap().entries.map((entry) {
-      final index = entry.key;
-      final station = entry.value;
-      debugPrint('Index: $index');
-
-      final stationName = provider.metroStationNames[index];
-      final isSelected = provider.selectedMetroStationIndex == index;
-
-      return StaticMarker(
-        width: isSelected ? 150 : 40,
-        height: isSelected ? 80 : 40,
-        bearing: 0,
-        child: GestureDetector(
-          onTap: () {
-            provider.selectMetroStation(index);
-            widget.onStationTap(index);
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Tooltip - chỉ hiển thị khi ga metro đang được chọn
-              if (isSelected)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  margin: const EdgeInsets.only(bottom: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade700,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    stationName,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              // Metro station icon
-              Container(
-                width: isSelected ? 32 : 24,
-                height: isSelected ? 32 : 24,
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue.shade700 : AppColors.error,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: isSelected ? 3 : 2,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.5),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.train,
-                    color: Colors.white,
-                    size: isSelected ? 18 : 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        latLng: station,
-      );
-    }).toList();
-
-    _isInitialized = true;
-  }
-
-  @override
-  void didUpdateWidget(covariant _MetroStationMarkersLayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Chỉ rebuild markers khi selectedMetroStationIndex thay đổi
-    if (_lastSelectedIndex != widget.provider.selectedMetroStationIndex) {
-      _buildMarkers();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const SizedBox.shrink();
-    }
-
-    return Selector<MyTripRouteProvider, int?>(
-      selector: (_, provider) => provider.selectedMetroStationIndex,
-      builder: (context, selectedIndex, child) {
-        // Rebuild markers nếu selectedIndex thay đổi
-        if (_lastSelectedIndex != selectedIndex) {
-          _buildMarkers();
-        }
-
-        return StaticMarkerLayer(
-          key: ValueKey('metroStations_$selectedIndex'),
-          mapController: widget.provider.vietmapController,
-          markers: _cachedMarkers,
-        );
-      },
     );
   }
 }

@@ -1,8 +1,8 @@
+//import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:vm_first_app/app/app_provider.dart';
 import 'package:vm_first_app/domain/domain.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
 import 'package:vm_first_app/core/core.dart';
@@ -97,9 +97,9 @@ class MyTripRouteProvider extends ChangeNotifier {
   Line? _metroRouteLine;
   Line? get metroRouteLine => _metroRouteLine;
 
-  // Station markers
-  List<Symbol> _stationMarkers = [];
-  List<Symbol> get stationMarkers => _stationMarkers;
+  // Station markers - đổi từ List<Symbol> thành list để lưu symbols
+  List<Symbol> _metroStationSymbols = [];
+  List<Symbol> get metroStationSymbols => _metroStationSymbols;
 
   // Nearest metro station properties
   int? _nearestStationIndex;
@@ -201,6 +201,8 @@ class MyTripRouteProvider extends ChangeNotifier {
     _drawMetroRoute();
   }
 
+
+
   Future<void> _drawMetroRoute() async {
     if (_vietmapController == null || metroStations.isEmpty) return;
 
@@ -220,6 +222,9 @@ class MyTripRouteProvider extends ChangeNotifier {
       debugPrint('Error drawing metro route: $e');
     }
   }
+
+
+
 
   Future<void> moveToMyLocation() async {
     if (_vietmapController == null) return;
@@ -433,7 +438,57 @@ class MyTripRouteProvider extends ChangeNotifier {
       _allLongPressedLocations.add(latLng);
       _allLongPressedEntities.add(_reverseEntity!);
     }
-    
+
+    //_currentPlaceLatLng ??= await _vietmapController?.requestMyLocationLatLng();
+    if(_currentPlaceLatLng == null) {
+      await moveToMyLocation();
+    }
+    final request = RouteRequest(
+      points: [
+        RoutePointRequest(
+          lat: _currentPlaceLatLng!.latitude,
+          lng: _currentPlaceLatLng!.longitude,
+        ),
+        ...allLongPressedLocations.map((location) => RoutePointRequest(lat: location.latitude, lng: location.longitude)),
+      ],
+      vehicle: 'car',
+      pointsEncoded: true,
+    );
+
+    RouteEntity? routeEntity = await _routeRepository.getRoute(request);
+    if (routeEntity != null && routeEntity.paths.isNotEmpty) {
+      final firstPath = routeEntity.paths[0];
+
+      _routeDistance = firstPath.distance / 1000; // Convert meters to km
+      _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
+
+      final String encodedPolyline = routeEntity.paths[0].points;
+      debugPrint('Show encoded: $encodedPolyline');
+      if (encodedPolyline.isNotEmpty) {
+        //latLngListForRoute.clear();
+        List<PointLatLng>latLngList = PolylinePoints.decodePolyline(
+          encodedPolyline,
+        );
+        debugPrint('LatLngList from package is: ${latLngList}');
+        List<LatLng> latLngListForRoute = [];
+        for (var latLng in latLngList) {
+          latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
+        }
+
+        await _vietmapController?.addPolyline(PolylineOptions(
+          geometry: latLngListForRoute,
+          polylineColor: Colors.black,
+          polylineWidth: 2.0,
+        ));
+        notifyListeners();
+      } else {
+        _errorMessage = 'No polyline data in route';
+        notifyListeners();
+      }
+    } else {
+      _errorMessage = 'No route found';
+      notifyListeners();
+    }
     // Move camera to long pressed location
     _isReverseDrawn = true;
     _vietmapController?.moveCamera(
@@ -526,7 +581,11 @@ class MyTripRouteProvider extends ChangeNotifier {
   /// Select a metro station at specific index
   void selectMetroStation(int index) {
     if (index >= 0 && index < metroStations.length) {
+      final oldIndex = _selectedMetroStationIndex;
       _selectedMetroStationIndex = index;
+
+      // Update symbol appearances
+      _updateSelectedStationSymbol(oldIndex, index);
 
       // Move camera to selected metro station
       _vietmapController?.moveCamera(
@@ -538,7 +597,12 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   /// Clear selected metro station
   void clearSelectedMetroStation() {
+    final oldIndex = _selectedMetroStationIndex;
     _selectedMetroStationIndex = null;
+
+    // Reset symbol appearance
+    _updateSelectedStationSymbol(oldIndex, null);
+
     notifyListeners();
   }
 
@@ -783,10 +847,48 @@ class MyTripRouteProvider extends ChangeNotifier {
     }
   }
 
+  /// Handle metro station symbol tap
+  void onSymbolTapped(Symbol symbol) {
+    final index = _metroStationSymbols.indexOf(symbol);
+    if (index != -1) {
+      selectMetroStation(index);
+    }
+  }
+
+  /// Update symbol appearance when selected
+  Future<void> _updateSelectedStationSymbol(int? oldIndex, int? newIndex) async {
+    if (_vietmapController == null) return;
+
+    try {
+      // Reset old selected symbol
+      if (oldIndex != null && oldIndex >= 0 && oldIndex < _metroStationSymbols.length) {
+        await _vietmapController!.updateSymbol(
+          _metroStationSymbols[oldIndex],
+          SymbolOptions(
+            iconSize: 0.15,
+            textSize: 11,
+          ),
+        );
+      }
+
+      // Highlight new selected symbol
+      if (newIndex != null && newIndex >= 0 && newIndex < _metroStationSymbols.length) {
+        await _vietmapController!.updateSymbol(
+          _metroStationSymbols[newIndex],
+          SymbolOptions(
+            iconSize: 0.2,
+            textSize: 14,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating symbol: $e');
+    }
+  }
+
   @override
   void dispose() {
     searchController.dispose();
     super.dispose();
   }
 }
-

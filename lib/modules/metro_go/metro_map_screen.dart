@@ -155,25 +155,9 @@ class _MetroMapViewState extends State<_MetroMapView> {
             ),
           ),
           Positioned(
-            bottom: 10,
-            left: 30,
-            child: FloatingActionButton(
-              mini: true,
-              tooltip: 'Add new my route',
-              onPressed: () => context.router.push(MyTripRouteRoute()),
-              child: const Icon(Icons.create_outlined, color: AppColors.primary),
-            )
-          ),
-          Positioned(
             top: 140,
             right: 0.0,
             child: _SavedTripsMenuAnchor(provider: provider),
-            // child: FloatingActionButton(
-            //     mini: true,
-            //     tooltip: 'My trip routes',
-            //     onPressed: () => (),
-            //     child: const Icon(Icons.person_pin_circle_outlined, color: AppColors.primary),
-            // ),
           )
         ],
       ),
@@ -258,12 +242,12 @@ class _SavedTripsMenuAnchorState extends State<_SavedTripsMenuAnchor> {
       context: context,
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.white,
       elevation: 8,
       items: _buildMenuItems(),
     );
 
     if (selectedTrip != null && mounted) {
-      // Navigate tới MyTripRouteScreen với tripName
       context.router.push(MyTripRouteRoute(tripName: selectedTrip));
     }
   }
@@ -276,8 +260,34 @@ class _SavedTripsMenuAnchorState extends State<_SavedTripsMenuAnchor> {
       return [
         PopupMenuItem<String>(
           enabled: false,
+          height: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(Icons.bookmark_outline, color: AppColors.primary),
+              const SizedBox(width: 4),
+              Text(
+                'My trip',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: AppColors.info,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(Icons.create_outlined, color: AppColors.primary),
+                iconSize: 18,
+                onPressed: () => context.router.push(MyTripRouteRoute()),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(height: 1),
+        PopupMenuItem<String>(
+          enabled: false,
           child: Container(
-            width: 220,
+            width: 200,
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -312,16 +322,23 @@ class _SavedTripsMenuAnchorState extends State<_SavedTripsMenuAnchor> {
         enabled: false,
         height: 40,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.bookmark_outline, color: AppColors.primary, size: 18),
-            const SizedBox(width: 8),
+            Icon(Icons.bookmark_outline, color: AppColors.primary),
+            const SizedBox(width: 4),
             Text(
-              'Chuyến đi đã lưu',
+              'My trip',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: Colors.grey.shade700,
+                color: AppColors.info,
               ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: Icon(Icons.create_outlined, color: AppColors.primary),
+              iconSize: 18,
+              onPressed: () => context.router.push(MyTripRouteRoute()),
             ),
           ],
         ),
