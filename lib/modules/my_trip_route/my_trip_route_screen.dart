@@ -24,6 +24,16 @@ class MyTripRouteScreen extends StatelessWidget {
         if (tripName != null && tripName!.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             provider.loadTripMarkers(tripName!);
+            if (context.mounted) {
+              showTopSnackBar(
+                Overlay.of(context),
+                MySnackBar.info(
+                  message:
+                  "Trip: ${TripNameParser.getTripName(tripName!)} is loaded",
+                ),
+                snackBarPosition: SnackBarPosition.bottom,
+              );
+            }
           });
         }
         return provider;
@@ -247,6 +257,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                               provider: provider,
                               onTripSelected: (tripName) async {
                                 await provider.loadTripMarkers(tripName);
+                                await provider.currentRoute(tripName);
                                 if (context.mounted) {
                                   showTopSnackBar(
                                     Overlay.of(context),
@@ -1475,30 +1486,30 @@ class _VietmapWidget extends StatefulWidget {
 class _VietmapWidgetState extends State<_VietmapWidget> {
   @override
   Widget build(BuildContext context) {
-    return VietmapGL(
-      styleString:
-          'https://maps.vietmap.vn/maps/styles/tm/style.json?apikey=${dotenv.env['VM_API_KEY']}',
-      initialCameraPosition: const CameraPosition(
-        // Initial position centered on metro line
-        target: LatLng(10.780000, 106.720000),
-        zoom: 12.0,
-      ),
-      onMapCreated: (controller) {
-        widget.onMapCreated(controller);
-        // Set up symbol tap listener
-        if (widget.onSymbolTapped != null) {
-          controller.onSymbolTapped.add(widget.onSymbolTapped!);
-        }
-      },
-      onMapLongClick: (point, coordinates) {
-        widget.onMapLongClick(coordinates);
-      },
-      trackCameraPosition: true,
-      myLocationEnabled: true,
-      myLocationTrackingMode: MyLocationTrackingMode.none,
-      myLocationRenderMode: MyLocationRenderMode.normal,
-      compassEnabled: true,
-      rotateGesturesEnabled: true,
+    return Stack(
+      children: [
+        VietmapGL(
+          styleString:
+              'https://maps.vietmap.vn/maps/styles/tm/style.json?apikey=${dotenv.env['VM_API_KEY']}',
+          initialCameraPosition: const CameraPosition(
+            // Initial position centered on metro line
+            target: LatLng(10.780000, 106.720000),
+            zoom: 12.0,
+          ),
+          onMapCreated: (controller) {
+            widget.onMapCreated(controller);
+          },
+          onMapLongClick: (point, coordinates) {
+            widget.onMapLongClick(coordinates);
+          },
+          trackCameraPosition: true,
+          myLocationEnabled: true,
+          myLocationTrackingMode: MyLocationTrackingMode.none,
+          myLocationRenderMode: MyLocationRenderMode.normal,
+          compassEnabled: true,
+          rotateGesturesEnabled: true,
+        ),
+      ],
     );
   }
 }

@@ -1,4 +1,4 @@
-//import 'dart:convert';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:vm_first_app/app/app_provider.dart';
@@ -8,7 +8,6 @@ import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
 import 'package:vm_first_app/core/core.dart';
 import 'package:vietmap_flutter_plugin/vietmap_flutter_plugin.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-
 class MyTripRouteProvider extends ChangeNotifier {
   // Kept for future use
   // ignore: unused_field
@@ -18,6 +17,8 @@ class MyTripRouteProvider extends ChangeNotifier {
   VietmapController? _vietmapController;
   VietmapController get vietmapController => _vietmapController!;
   bool get isMapReady => _vietmapController != null;
+
+
 
   final searchController = TextEditingController();
 
@@ -143,6 +144,12 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   Line? _routeToStationLine;
   Line? get routeToStationLine => _routeToStationLine;
+
+  Line? _currentTripRouteLine;
+  Line? get currentTripRouteLine => _currentTripRouteLine;
+  String _encodedPolyline = "";
+  String get encodedPolyline => _encodedPolyline;
+
   bool _isRouteToStationDrawn = false;
   bool get isRouteToStationDrawn => _isRouteToStationDrawn;
   double? _routeDistance;
@@ -188,6 +195,9 @@ class MyTripRouteProvider extends ChangeNotifier {
   bool _isPlaceAdded = false;
   bool get isPlaceAdded => _isPlaceAdded;
 
+  bool _isInitSuccess = false;
+  bool get isInitSuccess => _isInitSuccess;
+
   MyTripRouteProvider(this.appProvider) {
     Vietmap.getInstance('${dotenv.env['VM_API_KEY']}');
     _metroMapRepository = locator<MetroMapRepository>();
@@ -196,10 +206,21 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   void onMapCreated(VietmapController controller) {
     _vietmapController = controller;
+    //_isInitSuccess = true;
+    notifyListeners();
+
+    if(_currentTripName != null) {
+      _drawRouteForTripLoaded(_currentTripName!);
+    }
+    _isLoading = true;
     notifyListeners();
     // Draw metro route when map is created
     _drawMetroRoute();
+
   }
+
+  // Callback khi map style đã load hoàn toàn - gọi từ _VietmapWidget
+
 
 
 
@@ -331,10 +352,10 @@ class MyTripRouteProvider extends ChangeNotifier {
         _routeDistance = firstPath.distance / 1000; // Convert meters to km
         _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
 
-        final String encodedPolyline = firstPath.points;
+        _encodedPolyline = firstPath.points ;
 
-        if (encodedPolyline.isNotEmpty) {
-          final decodedPoints = PolylinePoints.decodePolyline(encodedPolyline);
+        if (_encodedPolyline.isNotEmpty) {
+          final decodedPoints = PolylinePoints.decodePolyline(_encodedPolyline);
           final List<LatLng> routePoints = decodedPoints
               .map((point) => LatLng(point.latitude, point.longitude))
               .toList();
@@ -438,7 +459,8 @@ class MyTripRouteProvider extends ChangeNotifier {
       _allLongPressedLocations.add(latLng);
       _allLongPressedEntities.add(_reverseEntity!);
     }
-
+    _allLongPressedEntities.sort((a,b) => a.distance > b.distance ? 1 : -1);
+    debugPrint(jsonEncode(_allLongPressedEntities));
     //_currentPlaceLatLng ??= await _vietmapController?.requestMyLocationLatLng();
     if(_currentPlaceLatLng == null) {
       await moveToMyLocation();
@@ -449,7 +471,7 @@ class MyTripRouteProvider extends ChangeNotifier {
           lat: _currentPlaceLatLng!.latitude,
           lng: _currentPlaceLatLng!.longitude,
         ),
-        ...allLongPressedLocations.map((location) => RoutePointRequest(lat: location.latitude, lng: location.longitude)),
+        ...allLongPressedEntities.map((location) => RoutePointRequest(lat: location.lat, lng: location.lng)),
       ],
       vehicle: 'car',
       pointsEncoded: true,
@@ -462,15 +484,15 @@ class MyTripRouteProvider extends ChangeNotifier {
       _routeDistance = firstPath.distance / 1000; // Convert meters to km
       _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
 
-      final String encodedPolyline = routeEntity.paths[0].points;
-      debugPrint('Show encoded: $encodedPolyline');
-      if (encodedPolyline.isNotEmpty) {
+      _encodedPolyline = routeEntity.paths[0].points;
+      debugPrint('Show encoded: $_encodedPolyline');
+      if (_encodedPolyline.isNotEmpty) {
         //latLngListForRoute.clear();
         List<PointLatLng>latLngList = PolylinePoints.decodePolyline(
-          encodedPolyline,
+          _encodedPolyline,
         );
         debugPrint('LatLngList from package is: ${latLngList}');
-        List<LatLng> latLngListForRoute = [];
+        List<LatLng> latLngListForRoute =[];
         for (var latLng in latLngList) {
           latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
         }
@@ -695,7 +717,7 @@ class MyTripRouteProvider extends ChangeNotifier {
 
     // Build key with format: trip_tripName_listofrefId
     final refIdList = _allLongPressedEntities.map((e) => e.refId).join('_');
-    final key = 'trip_{$tripName}_$refIdList';
+    final key = 'trip_{$tripName}_${refIdList}_encodedPolyline_$_encodedPolyline';
 
     await _routeRepository.setMyRouteTrip(_allLongPressedEntities, key);
     _currentTripName = tripName;
@@ -732,13 +754,18 @@ class MyTripRouteProvider extends ChangeNotifier {
   // Load trip markers by trip name
   Future<void> loadTripMarkers(String tripName) async {
     try {
+
+      debugPrint(tripName);
       _currentTripName = tripName;
       // Clear current markers
       _allLongPressedLocations.clear();
       _allLongPressedEntities.clear();
       _tripWaypoints.clear();
       _tripWaypointEntities.clear();
-
+      if(_vietmapController != null && _currentTripRouteLine != null) {
+        _encodedPolyline = '';
+        _vietmapController!.removePolyline(_currentTripRouteLine!);
+      }
       // Load trip from storage
       final trips = await _routeRepository.getTripByName(tripName);
       for (final entity in trips) {
@@ -788,6 +815,42 @@ class MyTripRouteProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _drawRouteForTripLoaded(String tripName) async {
+    try{
+      // Xóa polyline cũ nếu có trước khi vẽ mới
+      if (_currentTripRouteLine != null && _vietmapController != null) {
+        await _vietmapController!.removePolyline(_currentTripRouteLine!);
+        _currentTripRouteLine = null;
+      }
+
+      _encodedPolyline = tripName.split('encodedPolyline_').last;
+      debugPrint('im here: $_encodedPolyline');
+      List<PointLatLng>latLngList = PolylinePoints.decodePolyline(
+        _encodedPolyline,
+      );
+      debugPrint('LatLngList from package is: ${latLngList}');
+      List<LatLng> latLngListForRoute =[];
+      for (var latLng in latLngList) {
+        latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
+      }
+
+      _currentTripRouteLine = await _vietmapController!.addPolyline(
+        PolylineOptions(
+          geometry: latLngListForRoute,
+          polylineColor: Colors.blue,
+          polylineWidth: 2,
+        ),
+      );
+    }
+    catch(e){
+      debugPrint('$e');
+    }
+  }
+
+  Future<void> currentRoute(String tripName) async {
+    await _drawRouteForTripLoaded(tripName);
+    notifyListeners();
+  }
   // Check if current trip has markers to save
   bool get hasMarkersToSave => _allLongPressedLocations.isNotEmpty;
 
@@ -795,6 +858,16 @@ class MyTripRouteProvider extends ChangeNotifier {
     await _routeRepository.deleteTripByName(tripName);
     if(_currentTripName == tripName) {
       _currentTripName = '';
+
+      // Xóa polyline của trip đang hiển thị
+      if (_currentTripRouteLine != null && _vietmapController != null) {
+        try {
+          await _vietmapController!.removePolyline(_currentTripRouteLine!);
+          _currentTripRouteLine = null;
+        } catch (e) {
+          debugPrint('Error removing trip route line: $e');
+        }
+      }
     }
     _allLongPressedLocations.clear();
     _allLongPressedEntities.clear();
