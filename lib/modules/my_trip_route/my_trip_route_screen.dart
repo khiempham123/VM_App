@@ -24,7 +24,8 @@ class MyTripRouteScreen extends StatelessWidget {
         if (tripName != null && tripName!.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             provider.loadTripMarkers(tripName!);
-            if (context.mounted) {
+            if(context.mounted && provider.isMapReady) {
+              debugPrint('im here with mouted context');
               showTopSnackBar(
                 Overlay.of(context),
                 MySnackBar.info(
@@ -35,7 +36,9 @@ class MyTripRouteScreen extends StatelessWidget {
               );
             }
           });
+
         }
+
         return provider;
       },
       child: const _MyTripRouteView(),
@@ -62,6 +65,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
           // Map Widget
           _VietmapWidget(
             onMapCreated: provider.onMapCreated,
+            onMapFullyRendered: provider.onMapFullyRendered,
             onMapLongClick: (latLng) async {
               await provider.onMapLongClick(latLng);
               // Show bottom sheet after reverse data is loaded
@@ -78,11 +82,36 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
             },
           ),
 
+          // Loading indicator while map is not fully rendered
+          if (!provider.isMapFullyRendered)
+            Container(
+              color: Colors.white.withValues(alpha: 0.7),
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading map...',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Search Bar
 
 
           // Selected Location Marker (from search)
-          if (provider.isMapReady && provider.isOnSelectedLocation && provider.selectedPlaceLatLng != null)
+          if (provider.isMapReady && provider.isMapFullyRendered && provider.isOnSelectedLocation && provider.selectedPlaceLatLng != null)
 
             StaticMarkerLayer(
               key: const ValueKey('selectedLocation'),
@@ -103,7 +132,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
             ),
 
           // Long Pressed Location Markers - hiển thị tất cả các điểm đã click
-          if (provider.isMapReady && provider.allLongPressedLocations.isNotEmpty)
+          if (provider.isMapReady && provider.isMapFullyRendered && provider.allLongPressedLocations.isNotEmpty)
             StaticMarkerLayer(
               key: ValueKey('longPressed_${provider.allLongPressedLocations.length}'),
               mapController: provider.vietmapController,
@@ -199,7 +228,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
             ),
 
           // User Location Layer
-          if (provider.isMapReady && provider.isOnMyLocation)
+          if (provider.isMapReady && provider.isMapFullyRendered && provider.isOnMyLocation)
             UserLocationLayer(
               mapController: provider.vietmapController,
               locationIcon: const Icon(
@@ -256,6 +285,16 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                             _TripsMenuAnchor(
                               provider: provider,
                               onTripSelected: (tripName) async {
+                                // Check if there are unsaved changes that need to be saved
+                                if (provider.hasMarkersToSave && provider.isPlaceAdded && provider.mustSaveBeforeSwitchNewTrip == false) {
+                                  // Show confirm dialog to save or discard
+                                  final shouldProceed = await _showConfirmSwitchTripDialog(context, provider, tripName);
+                                  if (!shouldProceed) {
+                                    // User cancelled, don't switch trip
+                                    return;
+                                  }
+                                }
+                                // Proceed to load the new trip
                                 await provider.loadTripMarkers(tripName);
                                 await provider.currentRoute(tripName);
                                 if (context.mounted) {
@@ -274,7 +313,9 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
                               tooltip: 'Create your strip',
-                              onPressed: () => _showCreateTripDialog(context, provider),
+                              onPressed: () => {
+
+                                _showCreateTripDialog(context, provider)},
                             ),
                           ],
                         ),
@@ -430,12 +471,16 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               child: FloatingActionButton(
                 heroTag: 'saveTrip',
                 mini: true,
-                tooltip: 'Lưu chuyến đi',
-                onPressed: () => _showSaveTripDialog(context, provider),
+                tooltip: 'Save this trip',
+                onPressed: () {
+                  provider.mustSavedBeforeStartNewTrip();
+                  _showSaveTripDialog(context, provider);},
                 backgroundColor: Colors.green.shade100,
                 child: const Icon(Icons.save, color: Colors.green),
               ),
             ),
+
+
         ],
       ),
     );
@@ -1099,6 +1144,138 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
     );
   }
 
+  /// Show confirm dialog when user tries to switch to a new trip without saving current one
+  /// Returns true if user wants to proceed (either saved or discarded), false if cancelled
+  Future<bool> _showConfirmSwitchTripDialog(
+    BuildContext context,
+    MyTripRouteProvider provider,
+    String newTripName,
+  ) async {
+    final TextEditingController tripNameController = TextEditingController(
+      text: TripNameParser.getTripName(provider.currentTripName ?? ''),
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Unsaved Trip',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'You have unsaved changes in your current trip. What would you like to do?',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: tripNameController,
+                decoration: InputDecoration(
+                  labelText: 'Trip Name (to save)',
+                  hintText: 'Enter trip name...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.edit),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Current trip has ${provider.allLongPressedLocations.length} arrival points',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            // Cancel button - stay on current trip
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop('cancel');
+              },
+              child: const Text('Cancel'),
+            ),
+            // Discard button - clear data and switch
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop('discard');
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Discard'),
+            ),
+            // Save button - save and switch
+            ElevatedButton.icon(
+              onPressed: () async {
+                final tripName = tripNameController.text.trim();
+                if (tripName.isNotEmpty) {
+                  provider.storageMyTrip(tripName);
+                  Navigator.of(dialogContext).pop('saved');
+                }
+                provider.mustSavedBeforeStartNewTrip();
+
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Save'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == 'cancel') {
+      return false; // User cancelled, don't switch
+    } else if (result == 'discard') {
+      // User chose to discard - clear all unsaved data
+      await provider.clearUnsavedTripData();
+      if (context.mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          MySnackBar.info(
+            message: "Discarded unsaved trip data",
+          ),
+          snackBarPosition: SnackBarPosition.bottom,
+        );
+      }
+      return true; // Proceed to switch
+    } else if (result == 'saved') {
+      // User saved the trip
+      if (context.mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          MySnackBar.info(
+            message: "Saved: ${tripNameController.text.trim()}",
+          ),
+          snackBarPosition: SnackBarPosition.bottom,
+        );
+      }
+      await provider.clearUnsavedTripData();
+      return true; // Proceed to switch
+    }
+
+    return false; // Default: don't switch
+  }
+
   void _showNearestStationDialog(BuildContext context, MyTripRouteProvider provider) {
     showDialog(
       context: context,
@@ -1472,11 +1649,13 @@ class _VietmapWidget extends StatefulWidget {
   final Function(VietmapController) onMapCreated;
   final Function(LatLng) onMapLongClick;
   final Function(Symbol)? onSymbolTapped;
+  final VoidCallback? onMapFullyRendered;
 
   const _VietmapWidget({
     required this.onMapCreated,
     required this.onMapLongClick,
     this.onSymbolTapped,
+    this.onMapFullyRendered,
   });
 
   @override
@@ -1498,6 +1677,10 @@ class _VietmapWidgetState extends State<_VietmapWidget> {
           ),
           onMapCreated: (controller) {
             widget.onMapCreated(controller);
+          },
+          onMapFirstRenderedCallback: () {
+            // Called when map is fully rendered for the first time
+            widget.onMapFullyRendered?.call();
           },
           onMapLongClick: (point, coordinates) {
             widget.onMapLongClick(coordinates);

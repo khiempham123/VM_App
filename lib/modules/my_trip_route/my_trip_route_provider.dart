@@ -18,6 +18,10 @@ class MyTripRouteProvider extends ChangeNotifier {
   VietmapController get vietmapController => _vietmapController!;
   bool get isMapReady => _vietmapController != null;
 
+  // Flag to track if map is fully rendered
+  bool _isMapFullyRendered = false;
+  bool get isMapFullyRendered => _isMapFullyRendered;
+
 
 
   final searchController = TextEditingController();
@@ -105,6 +109,7 @@ class MyTripRouteProvider extends ChangeNotifier {
   // Nearest metro station properties
   int? _nearestStationIndex;
   int? get nearestStationIndex => _nearestStationIndex;
+
   String? get nearestStationName => _nearestStationIndex != null &&
       _nearestStationIndex! >= 0 &&
       _nearestStationIndex! < metroStationNames.length
@@ -115,6 +120,7 @@ class MyTripRouteProvider extends ChangeNotifier {
       _nearestStationIndex! < metroStations.length
       ? metroStations[_nearestStationIndex!]
       : null;
+
   double? _distanceToNearestStation;
   double? get distanceToNearestStation => _distanceToNearestStation;
 
@@ -198,6 +204,9 @@ class MyTripRouteProvider extends ChangeNotifier {
   bool _isInitSuccess = false;
   bool get isInitSuccess => _isInitSuccess;
 
+  bool _mustSaveBeforeSwitchNewTrip = false;
+  bool get mustSaveBeforeSwitchNewTrip => _mustSaveBeforeSwitchNewTrip;
+
   MyTripRouteProvider(this.appProvider) {
     Vietmap.getInstance('${dotenv.env['VM_API_KEY']}');
     _metroMapRepository = locator<MetroMapRepository>();
@@ -219,10 +228,15 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   }
 
+  /// Called when map is fully rendered for the first time
+  /// This ensures map is ready before displaying static markers from SharedPreferences
+  void onMapFullyRendered() {
+    _isMapFullyRendered = true;
+    notifyListeners();
+    debugPrint('Map fully rendered - ready to display static markers');
+  }
+
   // Callback khi map style đã load hoàn toàn - gọi từ _VietmapWidget
-
-
-
 
   Future<void> _drawMetroRoute() async {
     if (_vietmapController == null || metroStations.isEmpty) return;
@@ -232,7 +246,7 @@ class MyTripRouteProvider extends ChangeNotifier {
       _metroRouteLine = await _vietmapController?.addPolyline(
         PolylineOptions(
           geometry: metroStations,
-          polylineColor: Colors.blue,
+          polylineColor: Colors.lightBlue,
           polylineWidth: 4.0,
         ),
       );
@@ -243,9 +257,6 @@ class MyTripRouteProvider extends ChangeNotifier {
       debugPrint('Error drawing metro route: $e');
     }
   }
-
-
-
 
   Future<void> moveToMyLocation() async {
     if (_vietmapController == null) return;
@@ -461,57 +472,6 @@ class MyTripRouteProvider extends ChangeNotifier {
     }
     _allLongPressedEntities.sort((a,b) => a.distance > b.distance ? 1 : -1);
     debugPrint(jsonEncode(_allLongPressedEntities));
-    //_currentPlaceLatLng ??= await _vietmapController?.requestMyLocationLatLng();
-    if(_currentPlaceLatLng == null) {
-      await moveToMyLocation();
-    }
-    final request = RouteRequest(
-      points: [
-        RoutePointRequest(
-          lat: _currentPlaceLatLng!.latitude,
-          lng: _currentPlaceLatLng!.longitude,
-        ),
-        ...allLongPressedEntities.map((location) => RoutePointRequest(lat: location.lat, lng: location.lng)),
-      ],
-      vehicle: 'car',
-      pointsEncoded: true,
-    );
-
-    RouteEntity? routeEntity = await _routeRepository.getRoute(request);
-    if (routeEntity != null && routeEntity.paths.isNotEmpty) {
-      final firstPath = routeEntity.paths[0];
-
-      _routeDistance = firstPath.distance / 1000; // Convert meters to km
-      _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
-
-      _encodedPolyline = routeEntity.paths[0].points;
-      debugPrint('Show encoded: $_encodedPolyline');
-      if (_encodedPolyline.isNotEmpty) {
-        //latLngListForRoute.clear();
-        List<PointLatLng>latLngList = PolylinePoints.decodePolyline(
-          _encodedPolyline,
-        );
-        debugPrint('LatLngList from package is: ${latLngList}');
-        List<LatLng> latLngListForRoute =[];
-        for (var latLng in latLngList) {
-          latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
-        }
-
-        await _vietmapController?.addPolyline(PolylineOptions(
-          geometry: latLngListForRoute,
-          polylineColor: Colors.black,
-          polylineWidth: 2.0,
-        ));
-        notifyListeners();
-      } else {
-        _errorMessage = 'No polyline data in route';
-        notifyListeners();
-      }
-    } else {
-      _errorMessage = 'No route found';
-      notifyListeners();
-    }
-    // Move camera to long pressed location
     _isReverseDrawn = true;
     _vietmapController?.moveCamera(
       CameraUpdate.newLatLngZoom(latLng, 16.0),
@@ -582,6 +542,49 @@ class MyTripRouteProvider extends ChangeNotifier {
     _isOnLongPressedLocation = false;
     _isReverseDrawn = false;
     notifyListeners();
+  }
+
+  /// Clear all unsaved trip data (markers and polylines) before switching to a new trip
+  /// This is called when user decides NOT to save the current trip
+  Future<void> clearUnsavedTripData() async {
+    // Clear all long pressed locations (markers)
+    _allLongPressedLocations.clear();
+    _allLongPressedEntities.clear();
+    _longPressedLocation = null;
+    _reverseEntity = null;
+    _isOnLongPressedLocation = false;
+    _isReverseDrawn = false;
+
+    // Clear trip waypoints
+    _tripWaypoints.clear();
+    _tripWaypointEntities.clear();
+
+    // Remove current trip route polyline
+    if (_currentTripRouteLine != null ) {
+      debugPrint('im here to remove Current Polyline');
+      await _vietmapController!.removePolyline(_currentTripRouteLine!);
+      _currentTripRouteLine = null;
+    }
+    _encodedPolyline = '';
+
+    // Remove route to station polyline if exists
+    if (_routeToStationLine != null) {
+      await _vietmapController!.removePolyline(_routeToStationLine!);
+      _routeToStationLine = null;
+      _isRouteToStationDrawn = false;
+      _routeDistance = null;
+      _routeDuration = null;
+      _nearestStationIndex = null;
+      _distanceToNearestStation = null;
+    }
+
+    // Reset place added flag
+    _isPlaceAdded = false;
+    _mustSaveBeforeSwitchNewTrip = false;
+    // Reset current trip name
+    _currentTripName = null;
+    notifyListeners();
+    debugPrint('Cleared all unsaved trip data');
   }
 
   /// Select a marker at specific index from allLongPressedLocations
@@ -669,11 +672,68 @@ class MyTripRouteProvider extends ChangeNotifier {
         _tripWaypoints.add(_longPressedLocation!);
         _tripWaypointEntities.add(_reverseEntity!);
         _isPlaceAdded = true;
+        if(_currentPlaceLatLng == null) {
+          await moveToMyLocation();
+        }
+        final request = RouteRequest(
+          points: [
+            RoutePointRequest(
+              lat: _currentPlaceLatLng!.latitude,
+              lng: _currentPlaceLatLng!.longitude,
+            ),
+            ...allLongPressedEntities.map((location) => RoutePointRequest(lat: location.lat, lng: location.lng)),
+          ],
+          vehicle: 'car',
+          pointsEncoded: true,
+        );
+
+        RouteEntity? routeEntity = await _routeRepository.getRoute(request);
+        if (routeEntity != null && routeEntity.paths.isNotEmpty) {
+          final firstPath = routeEntity.paths[0];
+
+          _routeDistance = firstPath.distance / 1000; // Convert meters to km
+          _routeDuration = firstPath.time / 60000; // Convert milliseconds to minutes
+
+          _encodedPolyline = routeEntity.paths[0].points;
+          debugPrint('Show encoded: $_encodedPolyline');
+          if (_encodedPolyline.isNotEmpty) {
+            //latLngListForRoute.clear();
+            List<PointLatLng>latLngList = PolylinePoints.decodePolyline(
+              _encodedPolyline,
+            );
+            debugPrint('LatLngList from package is: ${latLngList}');
+            List<LatLng> latLngListForRoute =[];
+            for (var latLng in latLngList) {
+              latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
+            }
+            // if(_currentTripRouteLine != null) {
+            //   _encodedPolyline = '';
+            //   _vietmapController!.removePolyline(_currentTripRouteLine!);
+            // }
+            _currentTripRouteLine = await _vietmapController?.addPolyline(PolylineOptions(
+              geometry: latLngListForRoute,
+              polylineColor: Colors.blue,
+              polylineWidth: 2.0,
+            ));
+            notifyListeners();
+          } else {
+            _errorMessage = 'No polyline data in route';
+            notifyListeners();
+          }
+        } else {
+          _errorMessage = 'No route found';
+          notifyListeners();
+        }
         notifyListeners();
       }
     }
   }
 
+  Future<void> mustSavedBeforeStartNewTrip() async{
+    _currentTripName ='';
+    _mustSaveBeforeSwitchNewTrip = true;
+    notifyListeners();
+  }
   /// Remove current long pressed location from trip waypoints
   void removeFromTrip() {
     if (_longPressedLocation != null) {
@@ -709,6 +769,10 @@ class MyTripRouteProvider extends ChangeNotifier {
     _tripWaypointEntities.clear();
     _allLongPressedEntities.clear();
     _allLongPressedLocations.clear();
+    if(_currentTripRouteLine != null) {
+      _vietmapController?.removePolyline(_currentTripRouteLine!);
+      notifyListeners();
+    }
     notifyListeners();
   }
 
@@ -762,7 +826,7 @@ class MyTripRouteProvider extends ChangeNotifier {
       _allLongPressedEntities.clear();
       _tripWaypoints.clear();
       _tripWaypointEntities.clear();
-      if(_vietmapController != null && _currentTripRouteLine != null) {
+      if(_currentTripRouteLine != null) {
         _encodedPolyline = '';
         _vietmapController!.removePolyline(_currentTripRouteLine!);
       }
