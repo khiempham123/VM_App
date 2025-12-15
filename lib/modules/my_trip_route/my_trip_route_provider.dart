@@ -8,11 +8,15 @@ import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
 import 'package:vm_first_app/core/core.dart';
 import 'package:vietmap_flutter_plugin/vietmap_flutter_plugin.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:flutter_randomcolor/flutter_randomcolor.dart';
+import 'package:app_color_parser/app_color_parser.dart';
+
+final helper = HexColorJsonHelper();
+
 class MyTripRouteProvider extends ChangeNotifier {
   // Kept for future use
   // ignore: unused_field
   final AppProvider appProvider;
-
   // VietmapGL controller
   VietmapController? _vietmapController;
   VietmapController get vietmapController => _vietmapController!;
@@ -148,6 +152,13 @@ class MyTripRouteProvider extends ChangeNotifier {
   final List<ReverseEntity> _tripWaypointEntities = [];
   List<ReverseEntity> get tripWaypointEntities => _tripWaypointEntities;
 
+  // data from local storage loaded
+  List<ReverseEntity> _originalTripWaypointEntities = [];
+  List<ReverseEntity> get originalTripWaypointEntities => _originalTripWaypointEntities;
+
+  String _originalKey = '';
+  String get originalKey => _originalKey;
+
   Line? _routeToStationLine;
   Line? get routeToStationLine => _routeToStationLine;
 
@@ -207,6 +218,8 @@ class MyTripRouteProvider extends ChangeNotifier {
   bool _mustSaveBeforeSwitchNewTrip = false;
   bool get mustSaveBeforeSwitchNewTrip => _mustSaveBeforeSwitchNewTrip;
 
+  String _currentRouteColor = '';
+  String get currentRouteColor => _currentRouteColor;
   MyTripRouteProvider(this.appProvider) {
     Vietmap.getInstance('${dotenv.env['VM_API_KEY']}');
     _metroMapRepository = locator<MetroMapRepository>();
@@ -375,7 +388,7 @@ class MyTripRouteProvider extends ChangeNotifier {
             PolylineOptions(
               geometry: routePoints,
               polylineColor: Colors.green,
-              polylineWidth: 4.0,
+              polylineWidth: 2,
             ),
           );
 
@@ -583,6 +596,7 @@ class MyTripRouteProvider extends ChangeNotifier {
     _mustSaveBeforeSwitchNewTrip = false;
     // Reset current trip name
     _currentTripName = null;
+    _isOnMyLocation = false;
     notifyListeners();
     debugPrint('Cleared all unsaved trip data');
   }
@@ -706,14 +720,11 @@ class MyTripRouteProvider extends ChangeNotifier {
             for (var latLng in latLngList) {
               latLngListForRoute.add(LatLng(latLng.latitude, latLng.longitude));
             }
-            // if(_currentTripRouteLine != null) {
-            //   _encodedPolyline = '';
-            //   _vietmapController!.removePolyline(_currentTripRouteLine!);
-            // }
+
             _currentTripRouteLine = await _vietmapController?.addPolyline(PolylineOptions(
               geometry: latLngListForRoute,
-              polylineColor: Colors.blue,
-              polylineWidth: 2.0,
+              polylineColor: helper.fromJson(_currentRouteColor),
+              polylineWidth: 2,
             ));
             notifyListeners();
           } else {
@@ -781,9 +792,17 @@ class MyTripRouteProvider extends ChangeNotifier {
 
     // Build key with format: trip_tripName_listofrefId
     final refIdList = _allLongPressedEntities.map((e) => e.refId).join('_');
-    final key = 'trip_{$tripName}_${refIdList}_encodedPolyline_$_encodedPolyline';
+    //final newKey = 'trip_{$tripName}_${refIdList}_encodedPolyline_$_encodedPolyline';
 
-    await _routeRepository.setMyRouteTrip(_allLongPressedEntities, key);
+    final newKey = 'trip_{$tripName}_${refIdList}_encodedPolyline_${_encodedPolyline}_color_$_currentRouteColor';
+    debugPrint('Im here with new key: $newKey');
+    if(_originalKey != newKey && _originalTripWaypointEntities != _allLongPressedEntities) {
+      debugPrint('im here with original key: $_originalKey');
+      _routeRepository.deleteTripByName(_originalKey);
+      _originalKey = '';
+      _originalTripWaypointEntities.clear();
+    }
+    await _routeRepository.setMyRouteTrip(_allLongPressedEntities, newKey);
     _currentTripName = tripName;
     await loadSavedTripNames();
     notifyListeners();
@@ -792,6 +811,7 @@ class MyTripRouteProvider extends ChangeNotifier {
   // Create a new trip with a name
   Future<void> createNewTrip(String tripName) async {
     _currentTripName = tripName;
+    _currentRouteColor = RandomColor.getColorObject(Options()).toHexStringRGB();
     // Clear current trip data to start fresh
     clearAllTrip();
     notifyListeners();
@@ -819,7 +839,7 @@ class MyTripRouteProvider extends ChangeNotifier {
   Future<void> loadTripMarkers(String tripName) async {
     try {
 
-      debugPrint(tripName);
+      debugPrint('im here with: $tripName');
       _currentTripName = tripName;
       // Clear current markers
       _allLongPressedLocations.clear();
@@ -832,6 +852,9 @@ class MyTripRouteProvider extends ChangeNotifier {
       }
       // Load trip from storage
       final trips = await _routeRepository.getTripByName(tripName);
+      _originalTripWaypointEntities = trips;
+      _originalKey = tripName;
+
       for (final entity in trips) {
         final latLng = LatLng(entity.lat, entity.lng);
         _allLongPressedLocations.add(latLng);
@@ -872,7 +895,7 @@ class MyTripRouteProvider extends ChangeNotifier {
           CameraUpdate.newLatLngBounds(bounds, left: 50, right: 50, top: 150, bottom: 100),
         );
       }
-
+      _isOnLongPressedLocation = false;
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading trip markers: $e');
@@ -881,13 +904,15 @@ class MyTripRouteProvider extends ChangeNotifier {
 
   Future<void> _drawRouteForTripLoaded(String tripName) async {
     try{
-      // Xóa polyline cũ nếu có trước khi vẽ mới
       if (_currentTripRouteLine != null && _vietmapController != null) {
         await _vietmapController!.removePolyline(_currentTripRouteLine!);
         _currentTripRouteLine = null;
       }
 
       _encodedPolyline = tripName.split('encodedPolyline_').last;
+      debugPrint(tripName.split('color_').last);
+      _currentRouteColor = tripName.split('color_').last;
+      debugPrint('im here with parse color$_currentRouteColor');
       debugPrint('im here: $_encodedPolyline');
       List<PointLatLng>latLngList = PolylinePoints.decodePolyline(
         _encodedPolyline,
@@ -901,7 +926,7 @@ class MyTripRouteProvider extends ChangeNotifier {
       _currentTripRouteLine = await _vietmapController!.addPolyline(
         PolylineOptions(
           geometry: latLngListForRoute,
-          polylineColor: Colors.blue,
+          polylineColor: helper.fromJson(_currentRouteColor),
           polylineWidth: 2,
         ),
       );

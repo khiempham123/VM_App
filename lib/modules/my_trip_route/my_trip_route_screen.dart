@@ -107,9 +107,6 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               ),
             ),
 
-          // Search Bar
-
-
           // Selected Location Marker (from search)
           if (provider.isMapReady && provider.isMapFullyRendered && provider.isOnSelectedLocation && provider.selectedPlaceLatLng != null)
 
@@ -297,7 +294,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                                 // Proceed to load the new trip
                                 await provider.loadTripMarkers(tripName);
                                 await provider.currentRoute(tripName);
-                                if (context.mounted) {
+                                if (context.mounted && provider.isMapFullyRendered) {
                                   showTopSnackBar(
                                     Overlay.of(context),
                                     MySnackBar.info(
@@ -313,9 +310,14 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
                               tooltip: 'Create your strip',
-                              onPressed: () => {
-
-                                _showCreateTripDialog(context, provider)},
+                              onPressed: () async {
+                                if (provider.hasMarkersToSave && provider.isPlaceAdded && provider.mustSaveBeforeSwitchNewTrip == false) {
+                                  final shouldProceed = await _showConfirmSwitchTripDialog(context, provider, provider.currentTripName!);
+                                  if (!shouldProceed) {
+                                    return;
+                                  }
+                                }
+                                _showCreateTripDialog(context, provider);},
                             ),
                           ],
                         ),
@@ -1377,7 +1379,7 @@ class _TripsMenuAnchorState extends State<_TripsMenuAnchor> {
       builder: (context, provider, child) {
         return MenuAnchor(
           controller: _menuController,
-          alignmentOffset: const Offset(-45, 0), // Điều chỉnh vị trí menu: x âm = sang trái, y dương = xuống dưới
+          alignmentOffset: const Offset(-45, 0), // Điều chỉnh vị trí menu: x < 0 left, y > 0 down
           style: MenuStyle(
             backgroundColor: WidgetStatePropertyAll(Colors.white),
             surfaceTintColor: WidgetStatePropertyAll(Colors.transparent),

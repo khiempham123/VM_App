@@ -1,6 +1,7 @@
 import 'place_entity.dart';
+import 'package:equatable/equatable.dart';
 
-class ReverseEntity {
+class ReverseEntity extends Equatable {
   final double lat;
   final double lng;
   final String? partnerCode;
@@ -68,4 +69,7 @@ class ReverseEntity {
     'data_old': dataOld,
     'data_new': dataNew,
   };
+
+  @override
+  List<Object> get props => [refId, lat, lng];
 }

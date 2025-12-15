@@ -85,7 +85,6 @@ class RouteRepositoryImpl implements RouteRepository {
   @override
   Future<void> deleteTripByName(String tripNameKey) async {
       await storage.removeKey(tripNameKey);
-
   }
 }
 

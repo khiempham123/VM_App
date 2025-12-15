@@ -1,4 +1,3 @@
-import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
 import 'package:vm_first_app/domain/entities/reverse_entity.dart';
 import 'package:vm_first_app/domain/entities/route_entity.dart';
 import 'package:vm_first_app/domain/entities/route_request.dart';
