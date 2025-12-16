@@ -282,18 +282,33 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
                             _TripsMenuAnchor(
                               provider: provider,
                               onTripSelected: (tripName) async {
-                                // Check if there are unsaved changes that need to be saved
-                                if (provider.hasMarkersToSave && provider.isPlaceAdded && provider.mustSaveBeforeSwitchNewTrip == false) {
-                                  // Show confirm dialog to save or discard
+                                // Don't reload if clicking on the same trip
+                                if (provider.currentTripName == tripName) {
+                                  debugPrint('Im in same tripName');
+                                  return;
+                                }
+                                // Check if current trip has unsaved changes
+                                // Only show dialog if:
+                                // 1. Has waypoints (hasMarkersToSave)
+                                // 2. Has a current trip name
+                                // 3. NOT viewing a saved trip (means creating/editing new trip)
+                                if (provider.hasMarkersToSave &&
+                                    provider.currentTripName != null &&
+                                    provider.currentTripName!.isNotEmpty &&
+                                    !provider.isViewingSavedTrip) {
+                                  // Current trip has unsaved changes, ask user
+                                  debugPrint('Unsaved trip detected. Showing confirm dialog.');
                                   final shouldProceed = await _showConfirmSwitchTripDialog(context, provider, tripName);
                                   if (!shouldProceed) {
                                     // User cancelled, don't switch trip
                                     return;
                                   }
                                 }
-                                // Proceed to load the new trip
+
+                                // Proceed to load the selected trip
                                 await provider.loadTripMarkers(tripName);
                                 await provider.currentRoute(tripName);
+                                // No need to call tripSelected - currentTripName is already set in loadTripMarkers
                                 if (context.mounted && provider.isMapFullyRendered) {
                                   showTopSnackBar(
                                     Overlay.of(context),
@@ -1119,7 +1134,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               onPressed: () async {
                 final tripName = tripNameController.text.trim();
                 if (tripName.isNotEmpty) {
-                  provider.storageMyTrip(tripName);
+                  await provider.storageMyTrip(tripName);
                   if (context.mounted) {
                     Navigator.of(dialogContext).pop();
                     showTopSnackBar(
@@ -1227,11 +1242,10 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
               onPressed: () async {
                 final tripName = tripNameController.text.trim();
                 if (tripName.isNotEmpty) {
-                  provider.storageMyTrip(tripName);
+                  await provider.storageMyTrip(tripName);
+                  provider.mustSavedBeforeStartNewTrip();
                   Navigator.of(dialogContext).pop('saved');
                 }
-                provider.mustSavedBeforeStartNewTrip();
-
               },
               icon: const Icon(Icons.save),
               label: const Text('Save'),
@@ -1271,7 +1285,7 @@ class _MyTripRouteViewState extends State<_MyTripRouteView> {
           snackBarPosition: SnackBarPosition.bottom,
         );
       }
-      await provider.clearUnsavedTripData();
+      // Don't clear data here - let loadTripMarkers handle clearing when loading the new trip
       return true; // Proceed to switch
     }
 
@@ -1584,6 +1598,9 @@ class _TripsMenuAnchorState extends State<_TripsMenuAnchor> {
 
     // Trip items
     for (final tripName in provider.savedTripNames) {
+      // Check if this trip is currently selected
+      final isSelected = provider.currentTripName == tripName;
+
       items.add(
         InkWell(
           onTap: () {
@@ -1592,15 +1609,26 @@ class _TripsMenuAnchorState extends State<_TripsMenuAnchor> {
           },
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            width: 150,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              // Always have border to keep consistent sizing, just change visibility via color
+              border: Border.all(
+                color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.3)
+                  : Colors.transparent, // Transparent border for unselected
+                width: 1,
+              ),
+            ),
+            width: 150,
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
                   child: Icon(
-                    Icons.route_outlined,
-                    color: AppColors.primary,
+                    isSelected ? Icons.route : Icons.route_outlined,
+                    color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.7),
                     size: 18,
                   ),
                 ),
@@ -1608,9 +1636,10 @@ class _TripsMenuAnchorState extends State<_TripsMenuAnchor> {
                 Expanded(
                   child: Text(
                     TripNameParser.getTripName(tripName),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? AppColors.primary : Colors.black87,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,

@@ -16,7 +16,7 @@ class ReverseEntity extends Equatable {
   final dynamic dataOld;
   final dynamic dataNew;
 
-  ReverseEntity({
+  const ReverseEntity({
     required this.lat,
     required this.lng,
     this.partnerCode,

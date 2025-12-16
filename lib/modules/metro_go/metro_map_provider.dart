@@ -180,7 +180,8 @@ class MetroMapProvider extends ChangeNotifier {
             _isOnRoute = true;
             _isCalculatingRoute = false;
 
-            Line? lineDrive = await _vietmapController?.addPolyline(PolylineOptions(
+            //Line? lineDrive =
+            await _vietmapController?.addPolyline(PolylineOptions(
               geometry: latLngListForRoute,
               polylineColor: Colors.black,
               polylineWidth: 2.0,
